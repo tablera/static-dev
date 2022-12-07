@@ -4,6 +4,13 @@ export default defineConfig({
   nodeModulesTransform: {
     type: 'none',
   },
+  locale: {
+    default: 'zh-CN',
+    antd: true,
+    baseNavigator: true,
+  },
+  base: '/dev',
+  publicPath: '/dev/',
   routes: [
     {
       path: '/',
@@ -18,4 +25,5 @@ export default defineConfig({
     },
   ],
   fastRefresh: {},
+  dynamicImport: {},
 });
