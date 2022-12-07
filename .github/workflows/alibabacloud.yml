@@ -33,24 +33,6 @@ jobs:
         run: echo ${GITHUB_SHA::7} > version.txt
         working-directory: dist
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: dist
-          path: dist/
-
-  deploy:
-    runs-on: ubuntu-latest
-    environment: production
-    needs:
-      - build
-
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: dist
-          path: dist/
       - name: Setup OSS
         uses: yizhoumo/setup-ossutil@v1
         with:
