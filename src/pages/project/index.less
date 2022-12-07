@@ -1,0 +1,120 @@
+.project-main {
+  margin-top: 24px;
+  display: flex;
+}
+
+.project-side {
+  width: 200px;
+  user-select: none;
+}
+
+.project-content {
+  flex: 1;
+  padding: 0 16px;
+}
+
+.project-title {
+  margin-bottom: 0;
+}
+
+.project-desc {
+  color: #999;
+  margin-top: 8px;
+}
+
+.assets {
+  display: flex;
+}
+
+.assets-sider {
+  margin-right: 20px;
+}
+
+.assets-content {
+  flex: 1;
+}
+
+.assets-upload {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.assets-title {
+  margin: 24px 0 16px;
+}
+
+.project-side-empty {
+  padding: 50px 0;
+  border-radius: 6px;
+  background-color: #f1f1f1;
+  text-align: center;
+  cursor: pointer;
+}
+
+.assets-list {
+  overflow: hidden;;
+}
+
+.assets-item {
+  width: 120px;
+  margin: 8px;
+  display: block;
+  border-radius: 2px;
+  float: left;
+  border: 0.5px solid #ddd;
+  text-align: center;
+
+  &:hover {
+    background-color: #eee;
+  }
+}
+
+.assets-item-content {
+  flex: 1;
+}
+
+.assets-item-title {
+  overflow: hidden;
+  white-space: nowrap;
+  margin-bottom: 8px;
+}
+
+.assets-item-cover {
+  width: 70px;
+  height: 70px;
+  margin: 8px auto;
+  
+  img {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.project-side-header {
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-tree-item-content {
+  line-height: 30px;
+  font-size: bold;
+  display: block;
+  cursor: pointer;
+
+  &.active {
+    background-color: #eee;
+  }
+}
+
+.project-tree-item {
+  list-style: none;
+  margin-bottom: 0;
+}
