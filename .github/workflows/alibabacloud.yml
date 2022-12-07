@@ -58,4 +58,4 @@ jobs:
           access-key-id: '${{ secrets.ACCESS_KEY_ID }}'
           access-key-secret: '${{ secrets.ACCESS_KEY_SECRET }}'
       - name: Upload
-        run: ossutil sync -u --delete -f -j 1000 ./dist/ oss://tablera-fe-dev/rest/
+        run: ossutil sync -u --delete -f -j 1000 ./dist/ oss://tablera-fe-dev/dev/
