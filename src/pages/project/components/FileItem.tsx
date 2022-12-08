@@ -10,12 +10,13 @@ interface Props {
   onSelect: (file: V1ProjectAssetFile) => void;
   onUpdateName: (file: V1ProjectAssetFile) => void;
   onDeleteFile: (file: V1ProjectAssetFile) => void;
+  onEditFile: (file: V1ProjectAssetFile) => void;
 }
 
 const imgExtension = ['png', 'webp', 'svg', 'jpg', 'jpeg', 'gif', 'bmp'];
 
 function FileItem(props: Props) {
-  const { file, onSelect, onUpdateName, onDeleteFile } = props;
+  const { file, onSelect, onUpdateName, onDeleteFile, onEditFile } = props;
   let url = file.public_url;
   const extension = url.split('.').slice(-1)[0];
 
@@ -32,6 +33,15 @@ function FileItem(props: Props) {
       key: 'rename',
       onClick: () => {
         onUpdateName(file);
+      },
+    },
+    {
+      label: '编辑文件',
+      key: 'edit',
+      onClick: () => {
+        if (extension === 'json') {
+          onEditFile(file);
+        }
       },
     },
     {
@@ -66,6 +76,15 @@ function FileItem(props: Props) {
       return (
         <img
           src={file.public_url}
+          className="project-file-cover-img"
+          alt="图片"
+        />
+      );
+    }
+    if (extension === 'json') {
+      return (
+        <img
+          src="https://cdn.dev.tablera.cn/project/icons/asset/json.svg"
           className="project-file-cover-img"
           alt="图片"
         />

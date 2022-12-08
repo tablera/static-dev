@@ -40,6 +40,7 @@ export default (props: PropsWithChildren<{}>) => {
         <ul className="layout-sider-menu-wrap">
           {menuList.map((menu) => (
             <li
+              key={menu.path}
               className={classNames(
                 'layout-sider-menu-item',
                 menu.path === pathname && 'active',

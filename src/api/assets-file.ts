@@ -32,3 +32,10 @@ export const apiUpdateMenuName = (params: FormValues): Promise<v> =>
 /** 删除项目资源 */
 export const apiDeleteAssetsFile = (params: FormValues): Promise<any> =>
   remove(`/api/dev/project/${params.projectId}/asset_file/${params.fileId}`);
+
+/** 替换项目资源 */
+export const apiReplaceAssetsFile = (params: FormValues): Promise<any> =>
+  post(
+    `/api/dev/project/${params.projectId}/asset_file/${params.fileId}/action/replace`,
+    { object_key: params.object_key },
+  );

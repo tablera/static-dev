@@ -1,8 +1,7 @@
 import axios from 'axios';
 import { CODE_STATUS, DEFULAT_MESSAGE } from './constant';
 import { notification } from 'antd';
-import { history } from 'umi';
-import { AnyKeyProps, error, Record } from 'amiya';
+import { AnyKeyProps, error } from 'amiya';
 
 const instance = axios.create({
   timeout: 10 * 1000, // 设置超时时间10s
@@ -25,7 +24,9 @@ instance.interceptors.request.use(
       config.headers.common['Authorization'] = 'Bearer ' + token;
     }
     try {
-      config.url = config.url?.replace('/api', apiBase);
+      if (!config.url?.includes('http')) {
+        config.url = config.url?.replace('/api', apiBase);
+      }
     } catch {}
     return config;
   },

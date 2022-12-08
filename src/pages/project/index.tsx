@@ -8,25 +8,26 @@ import {
   MenuProps,
   message,
   Modal,
-  Popover,
   Space,
-  Upload,
 } from 'antd';
 import { useRef, useState } from 'react';
 import { IRouteComponentProps } from 'umi';
 import { ExclamationCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import './index.less';
-import { AyDialogForm, FormValues } from 'amiya';
+import { AnyKeyProps, AyDialog, AyDialogForm, FormValues } from 'amiya';
 import {
   apiCreateAssetsFile,
   apiDeleteAssetsFile,
   apiQueryAssetsFile,
+  apiReplaceAssetsFile,
   apiUpdateMenuName,
 } from '@/api/assets-file';
 import Compressor from 'compressorjs';
 import FileItem from './components/FileItem';
 import { history } from 'umi';
 import { apiUploadImg } from '@/api';
+import { get } from '@/utils/ajax';
+import JSONInput from '@/components/JSONInput';
 
 interface TreeItem extends V1ProjectAssetFile {
   title?: string;
@@ -39,6 +40,18 @@ const fields = [
   {
     key: 'name',
     placeholder: '请输入目录名称',
+    span: 24,
+  },
+];
+
+const editFileFields = [
+  {
+    key: 'content',
+    placeholder: '请输入文件内容',
+    type: 'custom',
+    renderContent: () => {
+      return <JSONInput />;
+    },
     span: 24,
   },
 ];
@@ -84,6 +97,11 @@ function Project(props: IRouteComponentProps) {
   const [uploading, setUploading] = useState(false);
   // 文件上传元素
   const inputRef = useRef<HTMLInputElement>();
+  // 文件编辑弹窗
+  const [editFileVisible, setEditFileVisible] = useState(false);
+  const [editFileDefaultValue, setEditFileDefaultValue] = useState<AnyKeyProps>(
+    {},
+  );
 
   /** 加载数据 */
   const loadData = async () => {
@@ -156,6 +174,49 @@ function Project(props: IRouteComponentProps) {
       });
     }
   };
+  const onEditFile = (file: V1ProjectAssetFile) => {
+    fetch(file.public_url || '', {
+      mode: 'cors',
+      method: 'GET',
+    })
+      .then((response) => response.text())
+      .then((res) => {
+        setEditFileDefaultValue(res);
+        setEditFileVisible(true);
+        setActiveNode(file);
+      });
+  };
+
+  /** 编辑文件 */
+  const apiEditFile = async (values: FormValues) => {
+    let content = values.content;
+    let file = new Blob([content], { type: 'text/json' });
+    file.name = activeNode.name;
+
+    // 图片保存信息
+    let remarkJson = {
+      tag: 'DEV',
+      path: location.pathname,
+      only_allow_image: false,
+      remark: {
+        projectId: id,
+        projectName: project.name,
+        name: file.name,
+      },
+    };
+    const res = await apiUploadImg({
+      file,
+      only_allow_image: false,
+      remark: JSON.stringify(remarkJson),
+    });
+    const object_key = res.object_key;
+
+    await apiReplaceAssetsFile({
+      projectId: id,
+      fileId: activeNode.id,
+      object_key,
+    });
+  };
 
   /** 上传文件 */
   const handleUpload = async (list: Array<File>) => {
@@ -216,10 +277,20 @@ function Project(props: IRouteComponentProps) {
 
   const addItems: MenuProps['items'] = [
     {
-      label: '新增文件夹',
+      label: '新建文件夹',
       key: 'addMenu',
       onClick: () => {
         setAddMenuVisible(true);
+      },
+    },
+    {
+      label: '新建配置文件',
+      key: 'addMenu',
+      onClick: () => {
+        let content = JSON.stringify({ a: 1 });
+        let file = new Blob([content], { type: 'text/json' });
+        file.name = 'hello.json';
+        handleUpload([file]);
       },
     },
     {
@@ -275,7 +346,9 @@ function Project(props: IRouteComponentProps) {
             <a
               onClick={() => {
                 history.push(`/project/${id}`);
-                loadFileData(fileId);
+                setPathFile([]);
+                setFileId('');
+                loadFileData('');
                 loadAssetsData({ parent_id: '0' });
               }}
             >
@@ -302,6 +375,7 @@ function Project(props: IRouteComponentProps) {
             onSelect={onSelect}
             onUpdateName={onUpdateName}
             onDeleteFile={onDeleteFile}
+            onEditFile={onEditFile}
           />
         ))}
       </Space>
@@ -331,6 +405,21 @@ function Project(props: IRouteComponentProps) {
           loadAssetsData({ parent_id: fileId || '0' });
         }}
         onClose={() => setAddMenuVisible(false)}
+      />
+      <AyDialogForm
+        title="文件编辑"
+        fields={editFileFields}
+        visible={editFileVisible}
+        drawer
+        addApi={apiEditFile}
+        initialValues={{
+          content: editFileDefaultValue,
+        }}
+        onSuccess={() => {
+          loadAssetsData({ parent_id: fileId || '0' });
+          message.success('编辑成功');
+        }}
+        onClose={() => setEditFileVisible(false)}
       />
     </div>
   );
