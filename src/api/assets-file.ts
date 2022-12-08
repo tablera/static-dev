@@ -2,7 +2,7 @@ import {
   V1CreateProjectAssetFileResponse,
   V1QueryProjectAssetFileResponse,
 } from '@/swagger/dev/data-contracts';
-import { get, post, put } from '@/utils/ajax';
+import { get, post, put, remove } from '@/utils/ajax';
 import omitObj from '@/utils/omitObj';
 import { AnyKeyProps, FormValues } from 'amiya';
 
@@ -28,3 +28,7 @@ export const apiUpdateMenuName = (params: FormValues): Promise<v> =>
     `/api/dev/project/${params.projectId}/asset_file/${params.fileId}/action/rename`,
     omitObj(params, ['projectId', 'fileId']),
   );
+
+/** 删除项目资源 */
+export const apiDeleteAssetsFile = (params: FormValues): Promise<any> =>
+  remove(`/api/dev/project/${params.projectId}/asset_file/${params.fileId}`);

@@ -1,26 +1,32 @@
 import { apiGetProjectById } from '@/api/project';
 import { V1Project, V1ProjectAssetFile } from '@/swagger/dev/data-contracts';
 import { useMount } from 'ahooks';
-import { Breadcrumb, Button, Popover, Space, Upload } from 'antd';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { IRouteComponentProps } from 'umi';
 import {
-  InboxOutlined,
-  FolderAddOutlined,
-  EditOutlined,
-} from '@ant-design/icons';
+  Breadcrumb,
+  Button,
+  Dropdown,
+  MenuProps,
+  message,
+  Modal,
+  Popover,
+  Space,
+  Upload,
+} from 'antd';
+import { useRef, useState } from 'react';
+import { IRouteComponentProps } from 'umi';
+import { ExclamationCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import './index.less';
-import { AnyKeyProps, AyDialogForm, FormValues } from 'amiya';
+import { AyDialogForm, FormValues } from 'amiya';
 import {
   apiCreateAssetsFile,
+  apiDeleteAssetsFile,
   apiQueryAssetsFile,
   apiUpdateMenuName,
 } from '@/api/assets-file';
-import { apiUploadImg } from '@/api';
 import Compressor from 'compressorjs';
-import DirectoryTree from 'antd/lib/tree/DirectoryTree';
 import FileItem from './components/FileItem';
 import { history } from 'umi';
+import { apiUploadImg } from '@/api';
 
 interface TreeItem extends V1ProjectAssetFile {
   title?: string;
@@ -56,14 +62,28 @@ function CompressorFile(file: File) {
 
 function Project(props: IRouteComponentProps) {
   const { match } = props;
-  // @ts-ignore
+  // 项目ID
   const [id, setId] = useState(match.params.id || '');
+  // 当前目录 Id
   const [fileId, setFileId] = useState(match.params.fileId || '');
+  // 当前项目
   const [project, setProject] = useState<V1Project>({});
+  // 当前项目下的文件列表
   const [files, setFiles] = useState<V1ProjectAssetFile[]>([]);
+  // 面包屑文件路径
   const [pathFile, setPathFile] = useState<V1ProjectAssetFile[]>([]);
+  // 编辑文件名是否可见
   const [editNameVisible, setEditNameVisible] = useState(false);
+  // 选择的文件，接口处理用
   const [activeNode, setActiveNode] = useState<V1ProjectAssetFile>({});
+  // 新增目录是否可见
+  const [addMenuVisible, setAddMenuVisible] = useState(false);
+  // 选择文件是否可见
+  const [uploadVisible, setUploadVisible] = useState(false);
+  // 上传中
+  const [uploading, setUploading] = useState(false);
+  // 文件上传元素
+  const inputRef = useRef<HTMLInputElement>();
 
   /** 加载数据 */
   const loadData = async () => {
@@ -71,6 +91,7 @@ function Project(props: IRouteComponentProps) {
     setProject(project || {});
   };
 
+  /** 加载当前文件夹数据 */
   const loadFileData = async (fileId: string) => {
     if (fileId) {
       let newPathFile: V1ProjectAssetFile[] = [];
@@ -94,7 +115,9 @@ function Project(props: IRouteComponentProps) {
     setFiles(list || []);
   };
 
+  /** 选择文件 */
   const onSelect = (file: V1ProjectAssetFile) => {
+    // 选择文件进入
     if (file.type === 'DIRECTORY') {
       history.push(`/project/${file.project_id}/file/${file.id}`);
       setFileId(file.id);
@@ -103,9 +126,75 @@ function Project(props: IRouteComponentProps) {
     }
   };
 
+  /**
+   * 更改文件名称
+   */
   const onUpdateName = (file: V1ProjectAssetFile) => {
     setActiveNode(file);
     setEditNameVisible(true);
+  };
+
+  /**
+   * 删除文件
+   */
+  const onDeleteFile = (file: V1ProjectAssetFile) => {
+    if (file.type === 'DIRECTORY') {
+    } else {
+      Modal.confirm({
+        title: '删除提示',
+        content: '确定要删除这个文件吗？',
+        icon: <ExclamationCircleOutlined />,
+        onOk: async () => {
+          await apiDeleteAssetsFile({
+            fileId: file.id,
+            projectId: id,
+          });
+          loadFileData(fileId);
+          loadAssetsData({ parent_id: fileId || '0' });
+          message.success('删除成功');
+        },
+      });
+    }
+  };
+
+  /** 上传文件 */
+  const handleUpload = async (list: Array<File>) => {
+    setUploadVisible(false);
+    setUploading(true);
+    for (let i = 0; i < list.length; i++) {
+      let file = list[i];
+      // 图片保存信息
+      let remarkJson = {
+        tag: 'DEV',
+        path: location.pathname,
+        only_allow_image: false,
+        remark: {
+          projectId: id,
+          projectName: project.name,
+          name: file.name,
+        },
+      };
+      const newFile = await CompressorFile(file);
+      const res = await apiUploadImg({
+        file: newFile,
+        only_allow_image: false,
+        remark: JSON.stringify(remarkJson),
+      });
+      const name = file.name;
+      const object_key = res.object_key;
+
+      await apiCreateAssetsFile({
+        type: 'FILE',
+        projectId: id,
+        parent_id: fileId || '0',
+        object_key,
+        name: name,
+      });
+    }
+    setUploading(false);
+    loadFileData(fileId);
+    loadAssetsData({ parent_id: fileId || '0' });
+    return false;
   };
 
   const updateNameBeforeSubmit = (values: FormValues) => {
@@ -116,6 +205,32 @@ function Project(props: IRouteComponentProps) {
     };
   };
 
+  const addMenuBeforeSubmit = (values: FormValues) => {
+    return {
+      ...values,
+      type: 'DIRECTORY',
+      projectId: id,
+      parent_id: fileId || '0',
+    };
+  };
+
+  const addItems: MenuProps['items'] = [
+    {
+      label: '新增文件夹',
+      key: 'addMenu',
+      onClick: () => {
+        setAddMenuVisible(true);
+      },
+    },
+    {
+      label: '上传文件',
+      key: 'addFile',
+      onClick: () => {
+        inputRef.current?.click();
+      },
+    },
+  ];
+
   useMount(() => {
     loadData();
     loadFileData(fileId);
@@ -123,8 +238,38 @@ function Project(props: IRouteComponentProps) {
   });
 
   return (
-    <div>
-      <h2 className="project-title">
+    <div className="project" onDragEnter={(e) => setUploadVisible(true)}>
+      <input
+        type="file"
+        onInput={(e) => handleUpload(e.target?.files)}
+        value=""
+        ref={inputRef}
+        multiple
+        className="project-opacity-input"
+      />
+      {uploadVisible && (
+        <div
+          className="project-upload-layer"
+          onDragLeave={(e) => {
+            setUploadVisible(false);
+          }}
+        >
+          <input
+            type="file"
+            onInput={(e) => handleUpload(e.target?.files)}
+            value=""
+            ref={inputRef}
+            multiple
+          />
+          <div className="project-upload-text">
+            <p>放开上传到此处</p>
+            <div style={{ color: 'rgb(99, 125, 255)' }}>
+              【{project.slug}】{project.name}
+            </div>
+          </div>
+        </div>
+      )}
+      <header className="project-header">
         <Breadcrumb className="project-bread">
           <Breadcrumb.Item>
             <a
@@ -143,7 +288,12 @@ function Project(props: IRouteComponentProps) {
             </Breadcrumb.Item>
           ))}
         </Breadcrumb>
-      </h2>
+        <div className="project-heade-action">
+          <Dropdown menu={{ items: addItems }}>
+            <Button type="primary" shape="circle" icon={<PlusOutlined />} />
+          </Dropdown>
+        </div>
+      </header>
       <Space size={24} wrap>
         {files.map((file) => (
           <FileItem
@@ -151,6 +301,7 @@ function Project(props: IRouteComponentProps) {
             file={file}
             onSelect={onSelect}
             onUpdateName={onUpdateName}
+            onDeleteFile={onDeleteFile}
           />
         ))}
       </Space>
@@ -168,6 +319,18 @@ function Project(props: IRouteComponentProps) {
           loadAssetsData({ parent_id: fileId || '0' });
         }}
         onClose={() => setEditNameVisible(false)}
+      />
+
+      <AyDialogForm
+        title="添加文件夹"
+        visible={addMenuVisible}
+        fields={fields}
+        addApi={apiCreateAssetsFile}
+        beforeSubmit={addMenuBeforeSubmit}
+        onSuccess={() => {
+          loadAssetsData({ parent_id: fileId || '0' });
+        }}
+        onClose={() => setAddMenuVisible(false)}
       />
     </div>
   );

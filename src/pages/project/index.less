@@ -1,3 +1,8 @@
+.project {
+  width: 100%;
+  height: 100%;
+}
+
 .project-main {
   margin-top: 24px;
   display: flex;
@@ -13,8 +18,9 @@
   padding: 0 16px;
 }
 
-.project-title {
-  margin-bottom: 0;
+.project-header {
+  display: flex;
+  justify-content: space-between;
 }
 
 .project-desc {
@@ -62,7 +68,15 @@
   &:hover {
     background-color: #fafafa;
     border: 1px solid #eee;
+
+    .project-file-action {
+      opacity: 1;
+    }
   }
+}
+
+.project-file-action {
+  opacity: 0;
 }
 
 .project-file-label {
@@ -93,4 +107,39 @@
   a {
     font-size: 18px;
   }
+}
+
+.project-upload-layer {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, .8);
+  z-index: 10;
+  position: absolute;
+  text-align: center;
+
+  input[type=file] {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+  }
+}
+
+.project-upload-text {
+  top: 50%;
+  left: 50%;
+  color: #fff;
+  font-size: 30px;
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.project-opacity-input {
+  top: -100px;
+  left: -100px;
+  opacity: 0;
+  user-select: none;
+  pointer-events: none;
+  position: fixed;
 }
