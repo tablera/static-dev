@@ -410,7 +410,7 @@ function Project(props: IRouteComponentProps) {
         title="文件编辑"
         fields={editFileFields}
         visible={editFileVisible}
-        drawer
+        width={600}
         addApi={apiEditFile}
         initialValues={{
           content: editFileDefaultValue,

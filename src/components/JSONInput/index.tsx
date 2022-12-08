@@ -1,7 +1,10 @@
 import { useMount } from 'ahooks';
-import Editor from 'jsoneditor';
-import 'jsoneditor/dist/jsoneditor.css';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import AceEditor from 'react-ace';
+
+import 'ace-builds/src-noconflict/mode-json';
+import 'ace-builds/src-noconflict/theme-monokai';
+import 'ace-builds/src-noconflict/ext-language_tools';
 
 interface Props {
   value?: string;
@@ -10,44 +13,31 @@ interface Props {
 
 function JSONInput(props: Props) {
   const { value = '', onChange = () => {} } = props;
-  const [currValue, setCurrValue] = useState(value || '');
-  const inputRef = useRef<HTMLDivElement>();
-  const editRef = useRef<any>();
 
-  const init = () => {
-    if (editRef.current) {
-      return;
+  const AceValue = useMemo(() => {
+    if (value) {
+      try {
+        let json = JSON.parse(value);
+        return { a: 1 };
+      } catch {}
     }
-    const options = {};
-    const editor = new Editor(inputRef.current, options);
-    editRef.current = editor;
-    if (currValue) {
-      editor.set(JSON.parse(currValue));
-    }
-  };
-
-  const handleChangeValue = () => {
-    let currValue = JSON.stringify(editRef.current?.get());
-    setCurrValue(currValue);
-    onChange(currValue);
-  };
-
-  useEffect(() => {
-    if (value !== currValue) {
-      requestAnimationFrame(() => {
-        try {
-          setCurrValue(value);
-          editRef.current?.set(JSON.parse(value));
-        } catch {}
-      });
-    }
+    return {};
   }, [value]);
 
-  useMount(() => {
-    init();
-  });
+  const handleChange = (newValue) => {
+    onChange(newValue);
+  };
 
-  return <div ref={inputRef} onInput={() => handleChangeValue()}></div>;
+  return (
+    <AceEditor
+      mode="json"
+      theme="monokai"
+      value={value}
+      fontSize={16}
+      style={{ width: '100%' }}
+      onChange={handleChange}
+    />
+  );
 }
 
 export default JSONInput;
