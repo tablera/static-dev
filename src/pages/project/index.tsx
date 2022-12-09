@@ -28,6 +28,7 @@ import { history } from 'umi';
 import { apiUploadImg } from '@/api';
 import { get } from '@/utils/ajax';
 import JSONInput from '@/components/JSONInput';
+import ProjectAction from './components/ProjectAction';
 
 interface TreeItem extends V1ProjectAssetFile {
   title?: string;
@@ -220,31 +221,39 @@ function Project(props: IRouteComponentProps) {
     });
   };
 
+  const handleSaveFile = async (file: File) => {
+    // 图片保存信息
+    let remarkJson = {
+      tag: 'DEV',
+      path: location.pathname,
+      only_allow_image: false,
+      remark: {
+        projectId: id,
+        projectName: project.name,
+        name: file.name,
+      },
+    };
+    const newFile = await CompressorFile(file);
+    const res = await apiUploadImg({
+      file: newFile,
+      only_allow_image: false,
+      remark: JSON.stringify(remarkJson),
+    });
+    const name = file.name;
+    const object_key = res.object_key;
+    return {
+      name,
+      object_key,
+    };
+  };
+
   /** 上传文件 */
   const handleUpload = async (list: Array<File>) => {
     setUploadVisible(false);
     setUploading(true);
     for (let i = 0; i < list.length; i++) {
       let file = list[i];
-      // 图片保存信息
-      let remarkJson = {
-        tag: 'DEV',
-        path: location.pathname,
-        only_allow_image: false,
-        remark: {
-          projectId: id,
-          projectName: project.name,
-          name: file.name,
-        },
-      };
-      const newFile = await CompressorFile(file);
-      const res = await apiUploadImg({
-        file: newFile,
-        only_allow_image: false,
-        remark: JSON.stringify(remarkJson),
-      });
-      const name = file.name;
-      const object_key = res.object_key;
+      const { object_key } = await handleSaveFile(file);
 
       await apiCreateAssetsFile({
         type: 'FILE',
@@ -267,42 +276,6 @@ function Project(props: IRouteComponentProps) {
       projectId: id,
     };
   };
-
-  const addMenuBeforeSubmit = (values: FormValues) => {
-    return {
-      ...values,
-      type: 'DIRECTORY',
-      projectId: id,
-      parent_id: fileId || '0',
-    };
-  };
-
-  const addItems: MenuProps['items'] = [
-    {
-      label: '新建文件夹',
-      key: 'addMenu',
-      onClick: () => {
-        setAddMenuVisible(true);
-      },
-    },
-    {
-      label: '新建文件',
-      key: 'addFile',
-      onClick: () => {
-        let content = JSON.stringify({ a: 1 });
-        let file = new Blob([content], { type: 'text/json' });
-        file.name = 'hello.json';
-        handleUpload([file]);
-      },
-    },
-    {
-      label: '上传文件',
-      key: 'addFile',
-      onClick: () => {
-        inputRef.current?.click();
-      },
-    },
-  ];
 
   useMount(() => {
     loadData();
@@ -364,9 +337,14 @@ function Project(props: IRouteComponentProps) {
           ))}
         </Breadcrumb>
         <div className="project-heade-action">
-          <Dropdown menu={{ items: addItems }}>
-            <Button type="primary" shape="circle" icon={<PlusOutlined />} />
-          </Dropdown>
+          <ProjectAction
+            file={activeNode}
+            projectId={id}
+            refresh={(file) => {
+              loadAssetsData({ parent_id: fileId || '0' });
+            }}
+            onUpload={handleSaveFile}
+          />
         </div>
       </header>
       <Space size={24} wrap>
@@ -395,18 +373,6 @@ function Project(props: IRouteComponentProps) {
           loadAssetsData({ parent_id: fileId || '0' });
         }}
         onClose={() => setEditNameVisible(false)}
-      />
-
-      <AyDialogForm
-        title="添加文件夹"
-        visible={addMenuVisible}
-        fields={fields}
-        addApi={apiCreateAssetsFile}
-        beforeSubmit={addMenuBeforeSubmit}
-        onSuccess={() => {
-          loadAssetsData({ parent_id: fileId || '0' });
-        }}
-        onClose={() => setAddMenuVisible(false)}
       />
       <AyDialogForm
         title="文件编辑"

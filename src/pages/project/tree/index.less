@@ -78,3 +78,38 @@
 .ant-tree-node-content-wrapper {
   word-break: break-all;
 }
+
+.project-upload-layer {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, .8);
+  z-index: 11;
+  position: absolute;
+  text-align: center;
+
+  input[type=file] {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+  }
+}
+
+.project-upload-text {
+  top: 50%;
+  left: 50%;
+  color: #fff;
+  font-size: 30px;
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.project-opacity-input {
+  top: -100px;
+  left: -100px;
+  opacity: 0;
+  user-select: none;
+  pointer-events: none;
+  position: fixed;
+}

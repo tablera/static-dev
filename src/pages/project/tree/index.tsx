@@ -112,10 +112,7 @@ function Project(props: IRouteComponentProps) {
   const [editNameVisible, setEditNameVisible] = useState(false);
   // 设置树
   const [treeData, setTreeData] = useState<AnyKeyProps[]>([]);
-  // 上传加载中
-  const [uploadLoading, setUploadLoading] = useState(false);
-  // 目录编辑模式 add update
-  const [menuMode, setMenuMode] = useState<string>('add');
+  // 上传是否可见
   const [uploadVisible, setUploadVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
   // 当前选中的节点
@@ -217,19 +214,23 @@ function Project(props: IRouteComponentProps) {
   const handleUpload = async (list: Array<File>) => {
     setUploadVisible(false);
     setUploading(true);
+    let parent_id =
+      (activeNode.type === V1ProjectAssetFileTypeEnum.DIRECTORY
+        ? activeNode.id
+        : activeNode.parent_id) || '0';
     for (let i = 0; i < list.length; i++) {
       let file = list[i];
       const { name, object_key } = await handleSaveFile(file);
       await apiCreateAssetsFile({
         type: 'FILE',
         projectId: id,
-        parent_id: activeNode.id || '0',
+        parent_id,
         object_key,
         name: name,
       });
     }
     setUploading(false);
-    loadAssetsData(activeNode);
+    loadAssetsData({ key: parent_id });
   };
 
   useMount(() => {
@@ -238,13 +239,46 @@ function Project(props: IRouteComponentProps) {
   });
 
   return (
-    <div className="project-tree">
+    <div className="project-tree" onDragEnter={(e) => setUploadVisible(true)}>
+      <input
+        type="file"
+        onInput={(e) => handleUpload(e.target?.files)}
+        value=""
+        ref={inputRef}
+        multiple
+        className="project-opacity-input"
+      />
+      {uploadVisible && (
+        <div
+          className="project-upload-layer"
+          onDragLeave={(e) => {
+            setUploadVisible(false);
+          }}
+        >
+          <input
+            type="file"
+            onInput={(e) => handleUpload(e.target?.files)}
+            value=""
+            ref={inputRef}
+            multiple
+          />
+          <div className="project-upload-text">
+            <p>放开上传到此处</p>
+            <div style={{ color: 'rgb(99, 125, 255)' }}>
+              【{project.slug}】{project.name}
+            </div>
+          </div>
+        </div>
+      )}
       <h2 className="project-tree-title">
         【{project.slug}】{project.name}
         <ProjectAction
           file={activeNode}
           projectId={id}
           onUpload={(file) => handleSaveFile(file)}
+          openUpload={() => {
+            inputRef.current?.click();
+          }}
           refresh={(file) => {
             loadAssetsData(file);
           }}

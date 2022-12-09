@@ -14,6 +14,8 @@ interface Props {
   projectId: string;
   refresh: (file: V1ProjectAssetFile) => void;
   onUpload: (file: File) => void;
+  // 打开上传弹窗
+  openUpload: () => void;
 }
 
 const fields = [
@@ -25,7 +27,7 @@ const fields = [
 ];
 
 function ProjectAction(props: Props) {
-  const { refresh, onUpload, projectId, file } = props;
+  const { refresh, onUpload, projectId, file, openUpload } = props;
   // 新增目录是否可见
   const [addVisible, setAddVisible] = useState(false);
   const [mode, setMode] = useState('DIRECTORY');
@@ -50,6 +52,7 @@ function ProjectAction(props: Props) {
       label: '上传文件',
       key: 'uploadFile',
       onClick: () => {
+        openUpload();
         // inputRef.current?.click();
       },
     },

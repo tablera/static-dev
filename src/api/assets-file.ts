@@ -1,6 +1,9 @@
 import {
   V1CreateProjectAssetFileResponse,
+  V1DeleteProjectAssetFileResponse,
   V1QueryProjectAssetFileResponse,
+  V1QueryProjectAssetFileVersionResponse,
+  V1RenameProjectAssetFileResponse,
 } from '@/swagger/dev/data-contracts';
 import { get, post, put, remove } from '@/utils/ajax';
 import omitObj from '@/utils/omitObj';
@@ -23,14 +26,18 @@ export const apiCreateAssetsFile = (
   );
 
 /** 重命名目录名称 */
-export const apiUpdateMenuName = (params: FormValues): Promise<v> =>
+export const apiUpdateMenuName = (
+  params: FormValues,
+): Promise<V1RenameProjectAssetFileResponse> =>
   post(
     `/api/dev/project/${params.projectId}/asset_file/${params.fileId}/action/rename`,
     omitObj(params, ['projectId', 'fileId']),
   );
 
 /** 删除项目资源 */
-export const apiDeleteAssetsFile = (params: FormValues): Promise<any> =>
+export const apiDeleteAssetsFile = (
+  params: FormValues,
+): Promise<V1DeleteProjectAssetFileResponse> =>
   remove(`/api/dev/project/${params.projectId}/asset_file/${params.fileId}`);
 
 /** 替换项目资源 */
@@ -38,4 +45,13 @@ export const apiReplaceAssetsFile = (params: FormValues): Promise<any> =>
   post(
     `/api/dev/project/${params.projectId}/asset_file/${params.fileId}/action/replace`,
     { object_key: params.object_key },
+  );
+
+/** 查看历史版本 */
+export const apiGetAssetsFileVersion = (
+  params: FormValues,
+): Promise<V1QueryProjectAssetFileVersionResponse> =>
+  get(
+    `/api/dev/project/${params.projectId}/asset_file/${params.fileId}/version`,
+    omitObj(params, ['projectId', 'fileId']),
   );
