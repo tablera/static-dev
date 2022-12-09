@@ -51,7 +51,7 @@ function home() {
           {projectList.map((project) => (
             <div
               className="home-main-project"
-              onClick={() => history.push(`/project/${project.id}`)}
+              onClick={() => history.push(`/project/${project.id}/tree`)}
             >
               <h3 className="home-main-project-title">
                 【{project.slug}】{project.name}
@@ -76,6 +76,7 @@ function home() {
         visible={visible}
         addApi={apiCreateProject}
         onClose={() => setVisible(false)}
+        onSuccess={() => loadData()}
       />
     </div>
   );

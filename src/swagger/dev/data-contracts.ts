@@ -53,6 +53,8 @@ export interface V1CreateProjectRequest {
   slug?: string;
   /** 名称 */
   name?: string;
+  /** 描述 */
+  description?: string;
 }
 
 export interface V1CreateProjectResponse {
@@ -124,6 +126,7 @@ export interface V1Project {
   status?: V1ProjectStatusEnum;
   slug?: string;
   name?: string;
+  description?: string;
 }
 
 export interface V1ProjectAssetFile {

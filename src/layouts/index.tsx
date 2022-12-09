@@ -28,7 +28,6 @@ export default (props: PropsWithChildren<{}>) => {
   const location = useLocation();
 
   const [pathname, setPathname] = useState(location.pathname);
-  console.log(pathname);
 
   return (
     <div className="layout">

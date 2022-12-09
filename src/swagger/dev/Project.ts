@@ -115,6 +115,8 @@ export class Project<
       status?: V1ProjectStatusEnum;
       /** 名称 */
       name?: string;
+      /** 描述 */
+      description?: string;
     },
     params: RequestParams = {},
   ) =>
@@ -132,7 +134,7 @@ export class Project<
    * @tags 资源文件
    * @name DevGatewayQueryProjectAssetFile
    * @summary 查询项目资源文件
-   * @request GET:/project/{project_id}/aseet_file
+   * @request GET:/project/{project_id}/asset_file
    */
   devGatewayQueryProjectAssetFile = (
     projectId: string,
@@ -148,11 +150,13 @@ export class Project<
        * @format uint64
        */
       parent_id?: string;
+      /** ID 列表 */
+      id_in?: string[];
     },
     params: RequestParams = {},
   ) =>
     this.request<V1QueryProjectAssetFileResponse, GooglerpcStatus>({
-      path: `/project/${projectId}/aseet_file`,
+      path: `/project/${projectId}/asset_file`,
       method: 'GET',
       query: query,
       format: 'json',
@@ -164,7 +168,7 @@ export class Project<
    * @tags 资源文件
    * @name DevGatewayCreateProjectAssetFile
    * @summary 创建项目资源文件
-   * @request POST:/project/{project_id}/aseet_file
+   * @request POST:/project/{project_id}/asset_file
    */
   devGatewayCreateProjectAssetFile = (
     projectId: string,
@@ -184,7 +188,7 @@ export class Project<
     params: RequestParams = {},
   ) =>
     this.request<V1CreateProjectAssetFileResponse, GooglerpcStatus>({
-      path: `/project/${projectId}/aseet_file`,
+      path: `/project/${projectId}/asset_file`,
       method: 'POST',
       body: body,
       type: ContentType.Json,
@@ -197,7 +201,7 @@ export class Project<
    * @tags 资源文件
    * @name DevGatewayDeleteProjectAssetFile
    * @summary 删除项目资源文件
-   * @request DELETE:/project/{project_id}/aseet_file/{file_id}
+   * @request DELETE:/project/{project_id}/asset_file/{file_id}
    */
   devGatewayDeleteProjectAssetFile = (
     projectId: string,
@@ -205,7 +209,7 @@ export class Project<
     params: RequestParams = {},
   ) =>
     this.request<V1DeleteProjectAssetFileResponse, GooglerpcStatus>({
-      path: `/project/${projectId}/aseet_file/${fileId}`,
+      path: `/project/${projectId}/asset_file/${fileId}`,
       method: 'DELETE',
       format: 'json',
       ...params,
@@ -216,7 +220,7 @@ export class Project<
    * @tags 资源文件
    * @name DevGatewayRenameProjectAssetFile
    * @summary 重命名项目资源文件
-   * @request POST:/project/{project_id}/aseet_file/{file_id}/action/rename
+   * @request POST:/project/{project_id}/asset_file/{file_id}/action/rename
    */
   devGatewayRenameProjectAssetFile = (
     projectId: string,
@@ -228,7 +232,7 @@ export class Project<
     params: RequestParams = {},
   ) =>
     this.request<V1RenameProjectAssetFileResponse, GooglerpcStatus>({
-      path: `/project/${projectId}/aseet_file/${fileId}/action/rename`,
+      path: `/project/${projectId}/asset_file/${fileId}/action/rename`,
       method: 'POST',
       body: body,
       type: ContentType.Json,
@@ -241,7 +245,7 @@ export class Project<
    * @tags 资源文件
    * @name DevGatewayReplaceProjectAssetFile
    * @summary 替换项目资源文件
-   * @request POST:/project/{project_id}/aseet_file/{file_id}/action/replace
+   * @request POST:/project/{project_id}/asset_file/{file_id}/action/replace
    */
   devGatewayReplaceProjectAssetFile = (
     projectId: string,
@@ -253,7 +257,7 @@ export class Project<
     params: RequestParams = {},
   ) =>
     this.request<V1ReplaceProjectAssetFileResponse, GooglerpcStatus>({
-      path: `/project/${projectId}/aseet_file/${fileId}/action/replace`,
+      path: `/project/${projectId}/asset_file/${fileId}/action/replace`,
       method: 'POST',
       body: body,
       type: ContentType.Json,
@@ -266,7 +270,7 @@ export class Project<
    * @tags 资源文件
    * @name DevGatewayQueryProjectAssetFileVersion
    * @summary 查询项目资源文件版本
-   * @request GET:/project/{project_id}/aseet_file/{file_id}/version
+   * @request GET:/project/{project_id}/asset_file/{file_id}/version
    */
   devGatewayQueryProjectAssetFileVersion = (
     projectId: string,
@@ -282,7 +286,7 @@ export class Project<
     params: RequestParams = {},
   ) =>
     this.request<V1QueryProjectAssetFileVersionResponse, GooglerpcStatus>({
-      path: `/project/${projectId}/aseet_file/${fileId}/version`,
+      path: `/project/${projectId}/asset_file/${fileId}/version`,
       method: 'GET',
       query: query,
       format: 'json',

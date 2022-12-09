@@ -18,6 +18,10 @@ export default defineConfig({
       routes: [
         { path: '/home', component: '@/pages/home/index' },
         {
+          path: '/project/:id/tree',
+          component: '@/pages/project/tree/index',
+        },
+        {
           path: '/project/:id',
           component: '@/pages/project/index',
           routes: [

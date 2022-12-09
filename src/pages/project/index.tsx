@@ -174,6 +174,8 @@ function Project(props: IRouteComponentProps) {
       });
     }
   };
+
+  /** 编辑文件 */
   const onEditFile = (file: V1ProjectAssetFile) => {
     fetch(file.public_url || '', {
       mode: 'cors',
@@ -284,8 +286,8 @@ function Project(props: IRouteComponentProps) {
       },
     },
     {
-      label: '新建配置文件',
-      key: 'addMenu',
+      label: '新建文件',
+      key: 'addFile',
       onClick: () => {
         let content = JSON.stringify({ a: 1 });
         let file = new Blob([content], { type: 'text/json' });
