@@ -20,8 +20,6 @@ export const apiQueryAssetsFile = (
 export const apiCreateAssetsFile = (
   params: FormValues,
 ): Promise<V1CreateProjectAssetFileResponse> => {
-  console.log('param', params);
-
   return post(
     `/api/dev/project/${params.projectId}/asset_file`,
     omitObj(params, 'projectId'),

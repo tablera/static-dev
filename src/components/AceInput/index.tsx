@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import mime from 'mime-types';
 import AceEditor from 'react-ace';
 
 import 'ace-builds/src-noconflict/mode-json';
@@ -11,18 +12,17 @@ import 'ace-builds/src-noconflict/mode-yaml';
 import 'ace-builds/src-noconflict/theme-tomorrow';
 import 'ace-builds/src-noconflict/ext-language_tools';
 
-import { message } from 'antd';
-
 import * as prettier from 'prettier/standalone';
 
-import parseBabel from 'prettier/parser-babel';
-import parseHTML from 'prettier/parser-html';
-import parsePostcss from 'prettier/parser-postcss';
-import parseYAML from 'prettier/parser-yaml';
+import parserBabel from 'prettier/parser-babel';
+import parserHTML from 'prettier/parser-html';
+import parserPostcss from 'prettier/parser-postcss';
+import parserYAML from 'prettier/parser-yaml';
+import parserMarkdown from 'prettier/parser-markdown';
 
 interface Props {
+  filename?: string;
   value?: string;
-  mode: string;
 
   onChange?: (value: string) => void;
   onSave?: (value: string) => void;
@@ -31,6 +31,18 @@ interface Props {
 function AceInput(props: Props) {
   const [value, setValue] = useState(props.value || '');
   const editor = useRef();
+
+  const contentTpe = useMemo(() => {
+    if (!props.filename) {
+      return 'text/plain';
+    }
+
+    return mime.lookup(props.filename) || 'text/plain';
+  }, [props.filename]);
+
+  const mode = useMemo(() => {
+    return mime.extension(contentTpe) || 'text';
+  }, [contentTpe]);
 
   useEffect(() => {
     setValue(props.value || '');
@@ -44,7 +56,7 @@ function AceInput(props: Props) {
   return (
     <>
       <AceEditor
-        mode={props.mode}
+        mode={mode}
         theme="tomorrow"
         value={value}
         fontSize={16}
@@ -74,8 +86,14 @@ function AceInput(props: Props) {
               try {
                 handleChange(
                   prettier.format(value, {
-                    parser: props.mode,
-                    plugins: [parseBabel, parseHTML, parsePostcss, parseYAML],
+                    parser: mode,
+                    plugins: [
+                      parserBabel,
+                      parserHTML,
+                      parserPostcss,
+                      parserYAML,
+                      parserMarkdown,
+                    ],
                   }),
                 );
               } catch (e) {

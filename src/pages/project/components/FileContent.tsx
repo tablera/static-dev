@@ -35,20 +35,8 @@ function FileContent(props: Props) {
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState('');
 
-  const mode = useMemo(() => {
-    return (
-      {
-        js: 'javascript',
-        md: 'markdown',
-        sql: 'mysql',
-        go: 'golang',
-        yml: 'yaml',
-      }[extension] || extension
-    );
-  }, [extension]);
-
   const contentType = useMemo(() => {
-    return mime.lookup(extension || '.txt') || 'text/plain';
+    return mime.lookup(url) || 'text/plain';
   }, [extension]);
 
   const renderContent = () => {
@@ -160,7 +148,7 @@ function FileContent(props: Props) {
       file.type !== V1ProjectAssetFileTypeEnum.DIRECTORY ? (
         <div className="tree-item-file-content" key={file.id}>
           <AceInput
-            mode={mode}
+            filename={file.name}
             value={content}
             onChange={setContent}
             onSave={handleSave}
