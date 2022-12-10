@@ -6,7 +6,7 @@ import {
   V1ProjectAssetFileTypeEnum,
 } from '@/swagger/dev/data-contracts';
 import { AyDialogForm } from 'amiya';
-import { message } from 'antd';
+import { message, Skeleton, Space } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import FileAction from './FileAction';
 import mime from 'mime-types';
@@ -32,6 +32,7 @@ function FileContent(props: Props) {
   const { file, refresh } = props;
   const url = file.public_url || '';
   const extension = url.split('.').slice(-1)[0];
+  const [loading, setLoading] = useState(false);
   const [content, setContent] = useState('');
 
   const mode = useMemo(() => {
@@ -110,6 +111,7 @@ function FileContent(props: Props) {
       file.type !== V1ProjectAssetFileTypeEnum.DIRECTORY &&
       file.public_url
     ) {
+      setLoading(true);
       fetch(file.public_url + `?t=${Date.now()}`, {
         mode: 'cors',
         method: 'GET',
@@ -117,6 +119,9 @@ function FileContent(props: Props) {
         .then((response) => response.text())
         .then((res) => {
           setContent(res);
+        })
+        .finally(() => {
+          setLoading(false);
         });
     }
   }, [file]);
@@ -124,6 +129,19 @@ function FileContent(props: Props) {
   if (!file.id) {
     return <div></div>;
   }
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          padding: '32px',
+        }}
+      >
+        <Skeleton active />
+      </div>
+    );
+  }
+
   return (
     <div className="tree-item-content">
       <header className="project-tree-content-header">
