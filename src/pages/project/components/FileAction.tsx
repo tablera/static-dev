@@ -3,7 +3,7 @@ import {
   V1ProjectAssetFileTypeEnum,
   V1ProjectAssetFileVersion,
 } from '@/swagger/dev/data-contracts';
-import { Button, message, Modal, Space } from 'antd';
+import { Button, message, Modal, Select, Space } from 'antd';
 import {
   ExclamationCircleOutlined,
   LeftOutlined,
@@ -12,15 +12,16 @@ import {
 import {
   apiDeleteAssetsFile,
   apiGetAssetsFileVersion,
+  apiReplaceAssetsFile,
   apiUpdateMenuName,
 } from '@/api/assets-file';
 import { AyDialog, AyDialogForm, FormValues } from 'amiya';
 import { useEffect, useMemo, useState } from 'react';
 import copy from 'copy-to-clipboard';
 import { diff as DiffEditor } from 'react-ace';
-
-import 'ace-builds/src-noconflict/theme-monokai';
-import 'ace-builds/src-noconflict/ext-language_tools';
+import ReactDiffViewer from 'react-diff-viewer';
+import moment from 'moment';
+import { replace } from 'lodash';
 
 interface Props {
   file: V1ProjectAssetFile;
@@ -58,14 +59,17 @@ function FileAction(props: Props) {
   const [versionList, setVersionList] = useState<V1ProjectAssetFileVersion[]>(
     [],
   );
-  // 历史版本进度
-  const [versionIndex, setVersionIndex] = useState(0);
-  // 历史两个文件
+  // 历史版本号
+  const [version, setVersion] = useState(0);
+  // 版本文件
+  const [versionDataMap, setVersionDataMap] = useState<Record<number, string>>(
+    {},
+  );
+  // 版本回滚
+  const [rollbackLoading, setRollbackLoading] = useState(false);
   const versionFile = useMemo(() => {
-    return [versionList[versionIndex], versionList[versionIndex + 1]];
-  }, [versionList, versionIndex]);
-  // 历史两个文件内容
-  const [versionData, setVersionData] = useState<[string, string]>(['', '']);
+    return versionList.find((v) => v.version === `${version}`);
+  }, [version]);
 
   const url = file.public_url || '';
   const extension = url.split('.').slice(-1)[0];
@@ -113,18 +117,22 @@ function FileAction(props: Props) {
    * 查看历史版本
    */
   const handleViewHistory = async () => {
-    const { list = [] } = await apiGetAssetsFileVersion({
+    let { list = [] } = await apiGetAssetsFileVersion({
       projectId: file.project_id,
       fileId: file.id,
     });
+    list = list.filter((v) => v.size != '0');
     if (list.length <= 1) {
       message.info('当前是最新的版本了');
       return;
     }
-    setVersionList(list.reverse());
-    setVersionData(['', '']);
-    setVersionIndex(0);
+    list = list.sort((a, b) => Number(b.version) - Number(a.version));
+
+    setVersionList(list);
+    setVersion(+(list[1].version || '0'));
     setVersionVisible(true);
+
+    await Promise.all([loadVersionData(list[0]), loadVersionData(list[1])]);
   };
 
   /**
@@ -135,30 +143,45 @@ function FileAction(props: Props) {
     message.success('复制成功');
   };
 
-  const loadVerstionData = () => {
-    let [file1, file2] = versionFile;
-    fetch(file1.public_url + `?t=${Date.now()}`, {
+  const loadVersionData = async (fv: V1ProjectAssetFileVersion) => {
+    const version = Number(fv.version);
+    if (versionDataMap[Number(version)]) {
+      return;
+    }
+
+    const res = await fetch(fv.public_url!, {
       mode: 'cors',
       method: 'GET',
-    })
-      .then((response) => response.text())
-      .then((res1) => {
-        fetch(file2.public_url + `?t=${Date.now()}`, {
-          mode: 'cors',
-          method: 'GET',
-        })
-          .then((response) => response.text())
-          .then((res) => {
-            setVersionData([res1, res]);
-          });
-      });
+    });
+    const text = await res.text();
+
+    setVersionDataMap((v) => ({ ...v, [version]: text }));
   };
 
   useEffect(() => {
-    if (versionVisible && versionFile.length === 2) {
-      loadVerstionData();
+    if (versionVisible && versionFile) {
+      loadVersionData(versionFile);
     }
-  }, [versionVisible, versionFile]);
+  }, [versionVisible, version, versionFile]);
+
+  const handleRollback = async () => {
+    if (!versionFile) {
+      return;
+    }
+    setRollbackLoading(true);
+    try {
+      await apiReplaceAssetsFile({
+        projectId: versionFile.project_id,
+        fileId: versionFile.file_id,
+        object_key: versionFile.object_key,
+      });
+      setVersionVisible(false);
+      message.success('回滚成功');
+      refresh();
+    } catch (e) {}
+
+    setRollbackLoading(false);
+  };
 
   if (!file.id) {
     return <div></div>;
@@ -200,33 +223,44 @@ function FileAction(props: Props) {
         visible={versionVisible}
         width={1200}
         destroyOnClose
-        confirmVisible={false}
         onClose={() => setVersionVisible(false)}
+        confirmText="回滚"
+        onConfirm={handleRollback}
+        confirmVisible={versionFile?.size !== '0'}
+        loading={rollbackLoading}
       >
         <header style={{ marginBottom: 12 }}>
-          <Button
-            disabled={versionIndex === 0}
-            onClick={() => setVersionIndex(versionIndex - 1)}
-          >
-            <LeftOutlined />
-          </Button>
-          <Button
-            disabled={versionIndex >= versionList.length - 2}
-            onClick={() => setVersionIndex(versionIndex + 1)}
-          >
-            <RightOutlined />
-          </Button>
+          <Select
+            style={{ width: '300px' }}
+            value={version}
+            onChange={(version) => {
+              setVersion(version);
+            }}
+            options={[...versionList]
+              .slice(1)
+              .filter((v) => Boolean(v))
+              .map((v) => {
+                return {
+                  label: `${v.version} - ${moment(v.create_time).format(
+                    'YYYY-MM-DD HH:mm:ss',
+                  )}`,
+                  value: Number(v.version),
+                };
+              })}
+          ></Select>
         </header>
-        {versionData[0] && (
-          <DiffEditor
-            value={versionData}
-            theme="monokai"
-            height="600px"
-            width="100%"
-            fontSize={16}
-            mode={mode}
-          />
-        )}
+        {versionList.length > 1 &&
+          versionDataMap[version] &&
+          versionDataMap[Number(versionList[0].version)] && (
+            <ReactDiffViewer
+              leftTitle={`当前版本`}
+              oldValue={versionDataMap[Number(versionList[0].version)]}
+              rightTitle={`历史版本 - ${version} - ${moment(
+                versionFile?.create_time,
+              ).format('YYYY-MM-DD HH:mm:ss')}`}
+              newValue={versionDataMap[version]}
+            />
+          )}
       </AyDialog>
     </div>
   );

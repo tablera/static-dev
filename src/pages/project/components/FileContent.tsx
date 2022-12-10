@@ -10,6 +10,7 @@ import { message, Skeleton, Space } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import FileAction from './FileAction';
 import mime from 'mime-types';
+import ReactDiffViewer from 'react-diff-viewer';
 
 interface Props {
   file: V1ProjectAssetFile;
@@ -151,6 +152,7 @@ function FileContent(props: Props) {
           }
         />
       </header>
+
       {!imgExtension.includes(extension) &&
       file.type !== V1ProjectAssetFileTypeEnum.DIRECTORY ? (
         <div className="tree-item-file-content" key={file.id}>
