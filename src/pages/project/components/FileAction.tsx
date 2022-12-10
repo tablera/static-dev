@@ -237,6 +237,9 @@ function FileAction(props: Props) {
         onConfirm={handleRollback}
         confirmVisible={dataList[0] !== dataList[1]}
         loading={rollbackLoading}
+        bodyStyle={{
+          overflowX: 'scroll',
+        }}
       >
         <header style={{ marginBottom: 12 }}>
           <Select
