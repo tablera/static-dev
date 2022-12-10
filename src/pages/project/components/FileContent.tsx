@@ -126,7 +126,7 @@ function FileContent(props: Props) {
   }
   return (
     <div className="tree-item-content">
-      <header className="project-tree-contnet-header">
+      <header className="project-tree-content-header">
         <span></span>
         <FileAction
           file={file}
