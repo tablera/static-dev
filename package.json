@@ -46,7 +46,7 @@
     "@umijs/test": "^3.5.35",
     "classnames": "^2.3.2",
     "lint-staged": "^10.0.7",
-    "prettier": "^2.2.0",
+    "prettier": "^2.8.1",
     "typescript": "^4.1.2",
     "yorkie": "^2.0.0"
   }

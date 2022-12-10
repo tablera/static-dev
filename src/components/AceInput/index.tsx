@@ -10,6 +10,15 @@ import 'ace-builds/src-noconflict/mode-xml';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
 
+import { message } from 'antd';
+
+import * as prettier from 'prettier/standalone';
+
+import parseBabel from 'prettier/parser-babel';
+import parseHTML from 'prettier/parser-html';
+import parsePostcss from 'prettier/parser-postcss';
+import parseYAML from 'prettier/parser-yaml';
+
 interface Props {
   value?: string;
   mode: string;
@@ -54,6 +63,23 @@ function AceInput(props: Props) {
             bindKey: { win: 'Ctrl-S', mac: 'Command-S' },
             exec: (editor) => {
               props.onSave?.(editor.getValue());
+            },
+          },
+          {
+            name: 'format',
+            bindKey: { win: 'Alt-Shift-F', mac: 'Option-Shift-F' },
+            exec: (editor) => {
+              const value = editor.getValue();
+              try {
+                handleChange(
+                  prettier.format(value, {
+                    parser: props.mode,
+                    plugins: [parseBabel, parseHTML, parsePostcss, parseYAML],
+                  }),
+                );
+              } catch (e) {
+                console.error(e);
+              }
             },
           },
         ]}
