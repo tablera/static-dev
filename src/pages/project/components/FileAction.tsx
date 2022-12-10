@@ -65,6 +65,16 @@ function FileAction(props: Props) {
   const [versionDataMap, setVersionDataMap] = useState<Record<number, string>>(
     {},
   );
+  const dataList = useMemo(() => {
+    if (versionList.length <= 1) {
+      return [];
+    }
+
+    return [
+      versionDataMap[Number(versionList[0].version)],
+      versionDataMap[version],
+    ].filter((v) => v !== undefined);
+  }, [version, versionDataMap, versionList]);
   // 版本回滚
   const [rollbackLoading, setRollbackLoading] = useState(false);
   const versionFile = useMemo(() => {
@@ -121,7 +131,6 @@ function FileAction(props: Props) {
       projectId: file.project_id,
       fileId: file.id,
     });
-    list = list.filter((v) => v.size != '0');
     if (list.length <= 1) {
       message.info('当前是最新的版本了');
       return;
@@ -226,7 +235,7 @@ function FileAction(props: Props) {
         onClose={() => setVersionVisible(false)}
         confirmText="回滚"
         onConfirm={handleRollback}
-        confirmVisible={versionFile?.size !== '0'}
+        confirmVisible={dataList[0] !== dataList[1]}
         loading={rollbackLoading}
       >
         <header style={{ marginBottom: 12 }}>
@@ -249,18 +258,19 @@ function FileAction(props: Props) {
               })}
           ></Select>
         </header>
-        {versionList.length > 1 &&
-          versionDataMap[version] &&
-          versionDataMap[Number(versionList[0].version)] && (
+        {dataList.length == 2 &&
+          (dataList[0] === dataList[1] ? (
+            <div>文件内容一致</div>
+          ) : (
             <ReactDiffViewer
               leftTitle={`当前版本`}
-              oldValue={versionDataMap[Number(versionList[0].version)]}
+              oldValue={dataList[0]}
               rightTitle={`历史版本 - ${version} - ${moment(
                 versionFile?.create_time,
               ).format('YYYY-MM-DD HH:mm:ss')}`}
-              newValue={versionDataMap[version]}
+              newValue={dataList[1]}
             />
-          )}
+          ))}
       </AyDialog>
     </div>
   );
