@@ -41,6 +41,7 @@ function FileContent(props: Props) {
         md: 'markdown',
         sql: 'mysql',
         go: 'golang',
+        yml: 'yaml',
       }[extension] || extension
     );
   }, [extension]);
@@ -73,8 +74,8 @@ function FileContent(props: Props) {
     return url;
   };
 
-  const handleSave = async (content: string) => {
-    const f = new File([content], file.name || '', { type: contentType });
+  const handleSave = async (value: string) => {
+    const f = new File([value], file.name || '', { type: contentType });
 
     // 图片保存信息
     let remarkJson = {
@@ -130,7 +131,7 @@ function FileContent(props: Props) {
         <FileAction
           file={file}
           refresh={refresh}
-          onSave={handleSave}
+          onSave={() => handleSave(content)}
           saveVisible={
             !imgExtension.includes(extension) &&
             file.type !== V1ProjectAssetFileTypeEnum.DIRECTORY

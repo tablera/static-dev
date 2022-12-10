@@ -133,21 +133,30 @@ function Project(props: IRouteComponentProps) {
   /** 加载静态数据 */
   const loadAssetsData = async ({ key, children }: TreeItem) => {
     const { list = [] } = await apiQueryAssetsFile(id, { parent_id: key });
-    let data = list.map((item) => {
-      return {
-        ...item,
-        title: item.name,
-        key: item.id,
-        children: [],
-        isLeaf: item.type !== V1ProjectAssetFileTypeEnum.DIRECTORY,
-      };
-    });
+    let data = list
+      .map((item) => {
+        return {
+          ...item,
+          title: item.name,
+          key: item.id,
+          children: [],
+          isLeaf: item.type !== V1ProjectAssetFileTypeEnum.DIRECTORY,
+        };
+      })
+      .sort((a, b) => {
+        if (a.type === b.type) {
+          return a > b ? -1 : 1;
+        }
+
+        if (a.type === V1ProjectAssetFileTypeEnum.DIRECTORY) {
+          return -1;
+        }
+
+        return 1;
+      });
 
     if (!treeData.length || key === '0') {
       setTreeData(data);
-      if (!activeKey && data.length) {
-        setActiveKey(data[0].id);
-      }
       return;
     }
 
@@ -298,14 +307,18 @@ function Project(props: IRouteComponentProps) {
           <div className="project-tree-side">
             <DirectoryTree
               treeData={treeData}
-              defaultExpandAll
               blockNode
               selectedKeys={[activeKey]}
               onSelect={(selectedKeys, item) =>
                 setActiveKey(item.node.key as string)
               }
               loadData={loadAssetsData}
+              defaultExpandAll={false}
             />
+            <div
+              className="project-tree-side-extra"
+              onClick={() => setActiveKey('')}
+            ></div>
           </div>
           <div className="project-tree-content">
             <FileContent
@@ -321,7 +334,12 @@ function Project(props: IRouteComponentProps) {
         title="添加目录"
         visible={visible}
         fields={fields}
-        addApi={apiCreateAssetsFile}
+        addApi={(params) => {
+          return apiCreateAssetsFile({
+            parent_id: activeKey || '0',
+            ...params,
+          });
+        }}
         beforeSubmit={beforeSubmit}
         onSuccess={() => {
           loadAssetsData(activeNode ? activeNode : { key: '0' });

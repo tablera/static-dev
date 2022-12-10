@@ -7,7 +7,8 @@ import 'ace-builds/src-noconflict/mode-javascript';
 import 'ace-builds/src-noconflict/mode-css';
 import 'ace-builds/src-noconflict/mode-markdown';
 import 'ace-builds/src-noconflict/mode-xml';
-import 'ace-builds/src-noconflict/theme-monokai';
+import 'ace-builds/src-noconflict/mode-yaml';
+import 'ace-builds/src-noconflict/theme-tomorrow';
 import 'ace-builds/src-noconflict/ext-language_tools';
 
 import { message } from 'antd';
@@ -44,7 +45,7 @@ function AceInput(props: Props) {
     <>
       <AceEditor
         mode={props.mode}
-        theme="monokai"
+        theme="tomorrow"
         value={value}
         fontSize={16}
         width="100%"

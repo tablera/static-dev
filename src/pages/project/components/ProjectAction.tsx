@@ -1,7 +1,7 @@
 import { Button, Dropdown, MenuProps, message } from 'antd';
 
 import { PlusOutlined } from '@ant-design/icons';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AyDialogForm, FormValues } from 'amiya';
 import { apiCreateAssetsFile } from '@/api/assets-file';
 import {
@@ -13,7 +13,7 @@ import mime from 'mime-types';
 interface Props {
   file: V1ProjectAssetFile;
   projectId: string;
-  refresh: (file: V1ProjectAssetFile) => void;
+  refresh: (file: V1ProjectAssetFile & { key: string }) => void;
   onUpload: (file: File) => void;
   // 打开上传弹窗
   openUpload: () => void;
@@ -61,6 +61,14 @@ function ProjectAction(props: Props) {
     },
   ];
 
+  const parentId = useMemo(() => {
+    return (
+      (file.type === V1ProjectAssetFileTypeEnum.DIRECTORY
+        ? file.id
+        : file.parent_id) || '0'
+    );
+  }, [file]);
+
   const apiCreateNewFile = async (values: FormValues): Promise<any> => {
     const newFile = new File([], values.name, {
       type: mime.lookup(values.name) || 'text/plain',
@@ -93,7 +101,7 @@ function ProjectAction(props: Props) {
       ...values,
       type: 'DIRECTORY',
       projectId: file.project_id || projectId,
-      parent_id: file.parent_id || '0',
+      parent_id: parentId,
     };
   };
 
@@ -106,7 +114,7 @@ function ProjectAction(props: Props) {
       </div>
 
       <AyDialogForm
-        title="新建文件"
+        title={mode === 'DIRECTORY' ? '新建目录' : '新建文件'}
         visible={addVisible}
         fields={fields}
         mode={mode === 'DIRECTORY' ? 'add' : 'update'}
