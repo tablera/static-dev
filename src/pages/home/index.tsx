@@ -50,6 +50,7 @@ function home() {
         <Space size="large" wrap>
           {projectList.map((project) => (
             <div
+              key={project.id}
               className="home-main-project"
               onClick={() => history.push(`/project/${project.id}/tree`)}
             >

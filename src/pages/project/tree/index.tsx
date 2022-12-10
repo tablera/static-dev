@@ -26,6 +26,7 @@ import DirectoryTree from 'antd/lib/tree/DirectoryTree';
 import FileContent from '../components/FileContent';
 import ProjectAction from '../components/ProjectAction';
 import FileAction from '../components/FileAction';
+import SplitPane from 'react-split-pane';
 
 interface TreeItem extends V1ProjectAssetFile {
   title?: string;
@@ -285,26 +286,33 @@ function Project(props: IRouteComponentProps) {
         />
       </h2>
       <div className="project-tree-main">
-        <div className="project-tree-side">
-          <DirectoryTree
-            treeData={treeData}
-            defaultExpandAll
-            blockNode
-            selectedKeys={[activeKey]}
-            onSelect={(selectedKeys, item) =>
-              setActiveKey(item.node.key as string)
-            }
-            loadData={loadAssetsData}
-          />
-        </div>
-        <div className="project-tree-content">
-          <FileContent
-            file={activeNode}
-            refresh={() => {
-              loadAssetsData({ key: activeNode?.parent_id });
-            }}
-          />
-        </div>
+        <SplitPane
+          split="vertical"
+          defaultSize={300}
+          minSize={200}
+          maxSize={800}
+        >
+          <div className="project-tree-side">
+            <DirectoryTree
+              treeData={treeData}
+              defaultExpandAll
+              blockNode
+              selectedKeys={[activeKey]}
+              onSelect={(selectedKeys, item) =>
+                setActiveKey(item.node.key as string)
+              }
+              loadData={loadAssetsData}
+            />
+          </div>
+          <div className="project-tree-content">
+            <FileContent
+              file={activeNode}
+              refresh={() => {
+                loadAssetsData({ key: activeNode?.parent_id });
+              }}
+            />
+          </div>
+        </SplitPane>
       </div>
       <AyDialogForm
         title="添加目录"
