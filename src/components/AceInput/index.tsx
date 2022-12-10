@@ -20,6 +20,8 @@ import parserPostcss from 'prettier/parser-postcss';
 import parserYAML from 'prettier/parser-yaml';
 import parserMarkdown from 'prettier/parser-markdown';
 
+import './index.less';
+
 interface Props {
   filename?: string;
   value?: string;
@@ -54,7 +56,8 @@ function AceInput(props: Props) {
   };
 
   return (
-    <>
+    <div className="editor">
+      <div className="editor-header">{props.filename}</div>
       <AceEditor
         mode={mode}
         theme="tomorrow"
@@ -65,6 +68,7 @@ function AceInput(props: Props) {
         onChange={handleChange}
         enableBasicAutocompletion
         enableLiveAutocompletion
+        debounceChangePeriod={200}
         editorProps={{ $blockScrolling: true }}
         setOptions={{
           tabSize: 2,
@@ -103,7 +107,7 @@ function AceInput(props: Props) {
           },
         ]}
       />
-    </>
+    </div>
   );
 }
 
