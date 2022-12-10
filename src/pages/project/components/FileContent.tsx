@@ -9,6 +9,7 @@ import { AyDialogForm } from 'amiya';
 import { message } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import FileAction from './FileAction';
+import mime from 'mime-types';
 
 interface Props {
   file: V1ProjectAssetFile;
@@ -34,12 +35,18 @@ function FileContent(props: Props) {
   const [content, setContent] = useState('');
 
   const mode = useMemo(() => {
-    if (extension === 'js') {
-      return 'javascript';
-    } else if (extension === 'md') {
-      return 'markdown';
-    }
-    return extension || 'html';
+    return (
+      {
+        js: 'javascript',
+        md: 'markdown',
+        sql: 'mysql',
+        go: 'golang',
+      }[extension] || extension
+    );
+  }, [extension]);
+
+  const contentType = useMemo(() => {
+    return mime.lookup(extension || '.txt') || 'text/plain';
   }, [extension]);
 
   const renderContent = () => {
@@ -66,9 +73,8 @@ function FileContent(props: Props) {
     return url;
   };
 
-  const handleSave = async () => {
-    let newFile = new Blob([content], { type: 'text/json' });
-    newFile.name = file.name;
+  const handleSave = async (content: string) => {
+    const f = new File([content], file.name || '', { type: contentType });
 
     // 图片保存信息
     let remarkJson = {
@@ -82,7 +88,7 @@ function FileContent(props: Props) {
       },
     };
     const res = await apiUploadImg({
-      file: newFile,
+      file: f,
       only_allow_image: false,
       remark: JSON.stringify(remarkJson),
     });
@@ -100,7 +106,8 @@ function FileContent(props: Props) {
   useEffect(() => {
     if (
       !imgExtension.includes(extension) &&
-      file.type !== V1ProjectAssetFileTypeEnum.DIRECTORY
+      file.type !== V1ProjectAssetFileTypeEnum.DIRECTORY &&
+      file.public_url
     ) {
       fetch(file.public_url + `?t=${Date.now()}`, {
         mode: 'cors',
@@ -133,7 +140,12 @@ function FileContent(props: Props) {
       {!imgExtension.includes(extension) &&
       file.type !== V1ProjectAssetFileTypeEnum.DIRECTORY ? (
         <div className="tree-item-file-content" key={file.id}>
-          <AceInput mode={mode} value={content} onChange={setContent} />
+          <AceInput
+            mode={mode}
+            value={content}
+            onChange={setContent}
+            onSave={handleSave}
+          />
         </div>
       ) : (
         renderContent()

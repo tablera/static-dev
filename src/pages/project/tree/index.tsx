@@ -283,6 +283,9 @@ function Project(props: IRouteComponentProps) {
           refresh={(file) => {
             loadAssetsData(file);
           }}
+          onNewFile={(id) => {
+            setActiveKey(id);
+          }}
         />
       </h2>
       <div className="project-tree-main">

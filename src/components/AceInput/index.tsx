@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AceEditor from 'react-ace';
 
 import 'ace-builds/src-noconflict/mode-json';
@@ -12,36 +12,53 @@ import 'ace-builds/src-noconflict/ext-language_tools';
 
 interface Props {
   value?: string;
-  onChange?: (value: string) => void;
   mode: string;
+
+  onChange?: (value: string) => void;
+  onSave?: (value: string) => void;
 }
 
 function AceInput(props: Props) {
-  const { value = '', onChange = () => {}, mode } = props;
+  const [value, setValue] = useState(props.value || '');
+  const editor = useRef();
 
-  const AceValue = useMemo(() => {
-    if (value) {
-      try {
-        let json = JSON.parse(value);
-        return { a: 1 };
-      } catch {}
-    }
-    return {};
-  }, [value]);
+  useEffect(() => {
+    setValue(props.value || '');
+  }, [props.value]);
 
-  const handleChange = (newValue) => {
-    onChange(newValue);
+  const handleChange = (newValue: string) => {
+    setValue(newValue);
+    props.onChange?.(newValue);
   };
 
   return (
-    <AceEditor
-      mode={mode}
-      theme="monokai"
-      value={value}
-      fontSize={16}
-      style={{ width: '100%' }}
-      onChange={handleChange}
-    />
+    <>
+      <AceEditor
+        mode={props.mode}
+        theme="monokai"
+        value={value}
+        fontSize={16}
+        width="100%"
+        height="100%"
+        onChange={handleChange}
+        enableBasicAutocompletion
+        enableLiveAutocompletion
+        editorProps={{ $blockScrolling: true }}
+        setOptions={{
+          tabSize: 2,
+          useSoftTabs: true,
+        }}
+        commands={[
+          {
+            name: 'save',
+            bindKey: { win: 'Ctrl-S', mac: 'Command-S' },
+            exec: (editor) => {
+              props.onSave?.(editor.getValue());
+            },
+          },
+        ]}
+      />
+    </>
   );
 }
 

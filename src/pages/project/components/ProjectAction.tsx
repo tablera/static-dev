@@ -8,6 +8,7 @@ import {
   V1ProjectAssetFile,
   V1ProjectAssetFileTypeEnum,
 } from '@/swagger/dev/data-contracts';
+import mime from 'mime-types';
 
 interface Props {
   file: V1ProjectAssetFile;
@@ -16,6 +17,8 @@ interface Props {
   onUpload: (file: File) => void;
   // 打开上传弹窗
   openUpload: () => void;
+
+  onNewFile?: (id: string) => void;
 }
 
 const fields = [
@@ -59,14 +62,16 @@ function ProjectAction(props: Props) {
   ];
 
   const apiCreateNewFile = async (values: FormValues): Promise<any> => {
-    let newFile = new Blob([values.name], { type: 'text/json' }) as File;
-    newFile.name = values.name;
+    const newFile = new File([], values.name, {
+      type: mime.lookup(values.name) || 'text/plain',
+    });
+
     const { name, object_key } = await onUpload(newFile);
     let parent_id =
       (file.type === V1ProjectAssetFileTypeEnum.DIRECTORY
         ? file.id
         : file.parent_id) || '0';
-    await apiCreateAssetsFile({
+    const { id } = await apiCreateAssetsFile({
       ...values,
       type: 'FILE',
       object_key,
@@ -74,6 +79,10 @@ function ProjectAction(props: Props) {
       projectId: file.project_id || projectId,
       parent_id,
     });
+
+    if (id) {
+      props.onNewFile?.(id);
+    }
   };
 
   const addMenuBeforeSubmit = (values: FormValues, mode: string) => {
