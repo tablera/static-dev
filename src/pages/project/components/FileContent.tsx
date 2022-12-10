@@ -1,13 +1,13 @@
 import { apiUploadImg } from '@/api';
 import { apiReplaceAssetsFile } from '@/api/assets-file';
-import AceInput from '@/components/AceInput';
+import Editor from '@/components/Editor';
 import {
   V1ProjectAssetFile,
   V1ProjectAssetFileTypeEnum,
 } from '@/swagger/dev/data-contracts';
 import { AyDialogForm } from 'amiya';
 import { message, Skeleton, Space } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import FileAction from './FileAction';
 import mime from 'mime-types';
 
@@ -34,6 +34,7 @@ function FileContent(props: Props) {
   const extension = url.split('.').slice(-1)[0];
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState('');
+  const [originalContent, setOriginalContent] = useState('');
 
   const contentType = useMemo(() => {
     return mime.lookup(url) || 'text/plain';
@@ -64,6 +65,10 @@ function FileContent(props: Props) {
   };
 
   const handleSave = async (value: string) => {
+    if (value === originalContent) {
+      return message.warn('内容未修改');
+    }
+
     const f = new File([value], file.name || '', { type: contentType });
 
     // 图片保存信息
@@ -91,6 +96,7 @@ function FileContent(props: Props) {
       object_key,
     });
     message.success('保存成功');
+    setOriginalContent(value);
   };
 
   useEffect(() => {
@@ -107,6 +113,7 @@ function FileContent(props: Props) {
         .then((response) => response.text())
         .then((res) => {
           setContent(res);
+          setOriginalContent(res);
         })
         .finally(() => {
           setLoading(false);
@@ -147,7 +154,7 @@ function FileContent(props: Props) {
       {!imgExtension.includes(extension) &&
       file.type !== V1ProjectAssetFileTypeEnum.DIRECTORY ? (
         <div className="tree-item-file-content" key={file.id}>
-          <AceInput
+          <Editor
             filename={file.name}
             value={content}
             onChange={setContent}

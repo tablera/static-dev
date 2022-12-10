@@ -11,6 +11,7 @@ import 'ace-builds/src-noconflict/mode-xml';
 import 'ace-builds/src-noconflict/mode-yaml';
 import 'ace-builds/src-noconflict/theme-tomorrow';
 import 'ace-builds/src-noconflict/ext-language_tools';
+import 'ace-builds/src-noconflict/ext-searchbox';
 
 import * as prettier from 'prettier/standalone';
 
@@ -30,25 +31,26 @@ interface Props {
   onSave?: (value: string) => void;
 }
 
-function AceInput(props: Props) {
+function Editor(props: Props) {
   const [value, setValue] = useState(props.value || '');
-  const editor = useRef();
-
-  const contentTpe = useMemo(() => {
-    if (!props.filename) {
-      return 'text/plain';
-    }
-
-    return mime.lookup(props.filename) || 'text/plain';
-  }, [props.filename]);
-
-  const mode = useMemo(() => {
-    return mime.extension(contentTpe) || 'text';
-  }, [contentTpe]);
 
   useEffect(() => {
     setValue(props.value || '');
   }, [props.value]);
+
+  const editor = useRef(null);
+
+  const mode = useMemo(() => {
+    const contentType = mime.lookup(props.filename || '') || 'text/plain';
+    return mime.extension(contentType) || 'text';
+  }, [props.filename]);
+
+  // 这里是为了解决 exec 不会随 props 更新的问题
+  const et = useRef(new EventTarget());
+  et.current = new EventTarget();
+  et.current.addEventListener('command-save', () => {
+    props.onSave?.(value);
+  });
 
   const handleChange = (newValue: string) => {
     setValue(newValue);
@@ -59,16 +61,16 @@ function AceInput(props: Props) {
     <div className="editor">
       <div className="editor-header">{props.filename}</div>
       <AceEditor
+        ref={editor}
         mode={mode}
         theme="tomorrow"
-        value={value}
+        value={props.value}
         fontSize={16}
         width="100%"
         height="100%"
         onChange={handleChange}
         enableBasicAutocompletion
         enableLiveAutocompletion
-        debounceChangePeriod={200}
         editorProps={{ $blockScrolling: true }}
         setOptions={{
           tabSize: 2,
@@ -78,9 +80,7 @@ function AceInput(props: Props) {
           {
             name: 'save',
             bindKey: { win: 'Ctrl-S', mac: 'Command-S' },
-            exec: (editor) => {
-              props.onSave?.(editor.getValue());
-            },
+            exec: () => et.current.dispatchEvent(new Event('command-save')),
           },
           {
             name: 'format',
@@ -111,4 +111,4 @@ function AceInput(props: Props) {
   );
 }
 
-export default AceInput;
+export default Editor;
