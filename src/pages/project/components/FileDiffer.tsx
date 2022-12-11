@@ -58,6 +58,7 @@ function FileDiffer(props: Props) {
     try {
       await apiReplaceAssetsFile({
         projectId: versionFile.project_id,
+        // @ts-ignore
         fileId: versionFile.file_id,
         object_key: versionFile.object_key,
       });

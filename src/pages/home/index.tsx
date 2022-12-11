@@ -14,7 +14,9 @@ const fields: AySearchTableField[] = [
     table: {
       render: (name: string, project: V1Project) => {
         return (
-          <a onClick={() => history.push(`/project/${project.id}`)}>{name}</a>
+          <a onClick={() => history.push(`/project/${project.id}/file/0`)}>
+            {name}
+          </a>
         );
       },
     },
