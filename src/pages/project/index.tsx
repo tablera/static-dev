@@ -440,6 +440,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
                         <div
                           className="project-poper-action"
                           onClick={() => {
+                            handleCopy();
                             setPoperActionVisible(false);
                           }}
                         >
