@@ -1,84 +1,78 @@
 import { apiCreateProject, apiQueryProjectList } from '@/api/project';
 import { V1Project } from '@/swagger/dev/data-contracts';
-import { useMount } from 'ahooks';
-import { Space } from 'antd';
-import { useState } from 'react';
-import { PlusOutlined } from '@ant-design/icons';
 import './index.less';
-import { AyDialogForm, AyFormField } from 'amiya';
+import { AyAction, AyCtrl, AySearchTable, AySearchTableField } from 'amiya';
 import { history } from 'umi';
 
-const fields: AyFormField[] = [
+const fields: AySearchTableField[] = [
   {
     title: '名称',
     key: 'name',
-    required: true,
+    dialog: {
+      required: true,
+    },
+    table: {
+      render: (name: string, project: V1Project) => {
+        return (
+          <a onClick={() => history.push(`/project/${project.id}`)}>{name}</a>
+        );
+      },
+    },
   },
   {
-    title: '英文名称',
+    title: '标志',
     key: 'slug',
-    required: true,
+    dialog: {
+      required: true,
+    },
   },
   {
     title: '备注',
     key: 'description',
-    type: 'textarea',
+    renderType: 'ellipsis',
+    width: 300,
+    dialog: {
+      type: 'textarea',
+      required: true,
+    },
   },
   {
     title: '状态',
     key: 'status',
-    type: 'status-switch',
+    renderType: 'status-switch',
+    dialog: {
+      type: 'status-switch',
+    },
   },
 ];
 
 function home() {
-  const [projectList, setProjectList] = useState<V1Project[]>([]);
-  const [visible, setVisible] = useState(false);
-  const loadData = async () => {
-    const { list = [] } = await apiQueryProjectList({});
-    setProjectList(list);
+  const ctrl = {
+    render: (name: string, project: V1Project) => {
+      return (
+        <AyCtrl>
+          <AyAction onClick={() => history.push(`/project/${project.id}`)}>
+            资源管理
+          </AyAction>
+        </AyCtrl>
+      );
+    },
   };
 
-  useMount(() => {
-    loadData();
-  });
-
   return (
-    <div className="home">
-      <div className="home-main">
-        <h2 className="home-main-title">项目列表</h2>
-        <Space size="large" wrap>
-          {projectList.map((project) => (
-            <div
-              key={project.id}
-              className="home-main-project"
-              onClick={() => history.push(`/project/${project.id}/tree`)}
-            >
-              <h3 className="home-main-project-title">
-                【{project.slug}】{project.name}
-              </h3>
-              <div className="home-main-project-description">
-                {project.description}
-              </div>
-            </div>
-          ))}
-          <div
-            className="home-main-project home-main-project-add"
-            onClick={() => setVisible(true)}
-          >
-            <PlusOutlined />
-            新增项目
-          </div>
-        </Space>
-      </div>
-
-      <AyDialogForm
+    <div>
+      <AySearchTable
         fields={fields}
-        visible={visible}
-        addApi={apiCreateProject}
-        onClose={() => setVisible(false)}
-        onSuccess={() => loadData()}
-      />
+        title="项目列表"
+        ctrl={ctrl}
+        api={apiQueryProjectList}
+        dialogFormExtend={{
+          fields,
+          addApi: apiCreateProject,
+        }}
+      >
+        <AyAction action="add">新增项目</AyAction>
+      </AySearchTable>
     </div>
   );
 }

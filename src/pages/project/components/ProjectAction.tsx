@@ -114,7 +114,7 @@ function ProjectAction(props: Props) {
       </div>
 
       <AyDialogForm
-        title={mode === 'DIRECTORY' ? '新建目录' : '新建文件'}
+        title={mode === 'DIRECTORY' ? '新建文件夹' : '新建文件'}
         visible={addVisible}
         fields={fields}
         mode={mode === 'DIRECTORY' ? 'add' : 'update'}

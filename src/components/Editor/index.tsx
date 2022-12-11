@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import mime from 'mime-types';
 import AceEditor from 'react-ace';
 
@@ -26,7 +26,6 @@ import './index.less';
 interface Props {
   filename?: string;
   value?: string;
-
   onChange?: (value: string) => void;
   onSave?: (value: string) => void;
 }
@@ -42,7 +41,8 @@ function Editor(props: Props) {
 
   const mode = useMemo(() => {
     const contentType = mime.lookup(props.filename || '') || 'text/plain';
-    return mime.extension(contentType) || 'text';
+    let mode = contentType.split('/').slice(-1)[0];
+    return mode || 'text';
   }, [props.filename]);
 
   // 这里是为了解决 exec 不会随 props 更新的问题

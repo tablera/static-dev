@@ -1,19 +1,26 @@
 import { apiUploadImg } from '@/api';
 import { apiReplaceAssetsFile } from '@/api/assets-file';
 import Editor from '@/components/Editor';
-import {
-  V1ProjectAssetFile,
-  V1ProjectAssetFileTypeEnum,
-} from '@/swagger/dev/data-contracts';
-import { AyDialogForm } from 'amiya';
+import { V1ProjectAssetFileTypeEnum } from '@/swagger/dev/data-contracts';
 import { message, Skeleton, Space } from 'antd';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import FileAction from './FileAction';
 import mime from 'mime-types';
-import ReactDiffViewer from 'react-diff-viewer';
+import FileItem from './FileItem';
+import { TreeItem } from '../type';
 
 interface Props {
-  file: V1ProjectAssetFile;
+  file: TreeItem;
+  /** 选中文件 */
+  onSelect: (file: TreeItem) => void;
+  /** 删除文件 */
+  onDeleteAssets: (file: TreeItem) => void;
+  /** 查看历史版本 */
+  onViewVersion: (file: TreeItem) => void;
+  /** 修改文件名称 */
+  onUpdateName: (file: TreeItem) => void;
+  /** 复制文件链接 */
+  onCopyLink: (file: TreeItem) => void;
   refresh: () => void;
 }
 
@@ -29,8 +36,16 @@ const editableExtension = [
   'xml',
 ];
 
+/** 文件详情 */
 function FileContent(props: Props) {
-  const { file, refresh } = props;
+  const {
+    file,
+    onSelect,
+    onDeleteAssets,
+    onViewVersion,
+    onUpdateName,
+    onCopyLink,
+  } = props;
   const url = file.public_url || '';
   const extension = url.split('.').slice(-1)[0];
   const [loading, setLoading] = useState(false);
@@ -42,15 +57,23 @@ function FileContent(props: Props) {
   }, [extension]);
 
   const renderContent = () => {
+    // 文件夹
     if (file.type === V1ProjectAssetFileTypeEnum.DIRECTORY) {
+      // @ts-ignore 展示子文件
       return (
-        <div className="tree-item-file-content">
-          <img
-            src="https://cdn.dev.tablera.cn/project/icons/asset/file-folder.svg"
-            alt=""
-          />
-          <p className="tree-item-file-content-text">{file.name}</p>
-          <p>{file.id}</p>
+        <div>
+          <div className="editor-header">{file.name}</div>
+          <div className="tree-item-file-list">
+            <Space size="large" wrap>
+              {file.children?.map((childFile: TreeItem) => (
+                <FileItem
+                  file={childFile}
+                  key={childFile.key}
+                  onSelect={(file) => onSelect(file)}
+                />
+              ))}
+            </Space>
+          </div>
         </div>
       );
     } else if (imgExtension.includes(extension)) {
@@ -72,7 +95,7 @@ function FileContent(props: Props) {
 
     const f = new File([value], file.name || '', { type: contentType });
 
-    // 图片保存信息
+    // 保存信息
     let remarkJson = {
       tag: 'DEV',
       path: location.pathname,
@@ -144,8 +167,11 @@ function FileContent(props: Props) {
         <span></span>
         <FileAction
           file={file}
-          refresh={refresh}
+          onCopyLink={onCopyLink}
+          onViewVersion={onViewVersion}
+          onUpdateName={onUpdateName}
           onSave={() => handleSave(content)}
+          onDelete={onDeleteAssets}
           saveVisible={
             !imgExtension.includes(extension) &&
             file.type !== V1ProjectAssetFileTypeEnum.DIRECTORY
