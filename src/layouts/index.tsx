@@ -33,7 +33,7 @@ export default (props: PropsWithChildren<{}>) => {
     <div className="layout">
       <div className="layout-sider">
         <div className="layout-sider-header">
-          <img src="https://cdn.dev.tablera.cn/project/icons/asset/logo.png" />
+          <img src="https://cdn.dev.tablera.cn/project/icons/asset/logo.png/thumbnail-256x256.webp" />
           开发管理平台
         </div>
         <ul className="layout-sider-menu-wrap">

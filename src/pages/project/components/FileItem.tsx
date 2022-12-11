@@ -29,7 +29,11 @@ function FileItem(props: Props) {
     if (imgExtension.includes(extension)) {
       return (
         <img
-          src={file.public_url}
+          src={
+            extension === 'svg'
+              ? file.public_url
+              : file.public_url + '/thumbnail-256x256.webp'
+          }
           className="project-file-cover-img"
           alt="图片"
         />
