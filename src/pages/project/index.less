@@ -16,6 +16,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: auto;
 
   &-extra {
     flex: 1;
@@ -30,6 +31,8 @@
 
 .tree-item-content {
   height: 100%;
+  overflow: auto;
+  position: relative;
 }
 
 .project-tree-title {
@@ -38,6 +41,7 @@
 }
 
 .project-tree-content-header {
+  top: 0;
   height: 52px;
   line-height: 52px;
   font-size: 16px;
@@ -47,6 +51,7 @@
   display: flex;
   justify-content: space-between;
   z-index: 10;
+  position: sticky;
 }
 
 .tree-item-file-content {
@@ -230,6 +235,7 @@
 
 
 .project-file-label {
+  min-height: 50px;
   width: 100%;
   word-break: break-all;
   overflow: hidden;

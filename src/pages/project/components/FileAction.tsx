@@ -1,9 +1,13 @@
 import { V1ProjectAssetFileTypeEnum } from '@/swagger/dev/data-contracts';
-import { Button, Space } from 'antd';
+import { Button, Radio, Space } from 'antd';
 import { TreeItem } from '../type';
 
 interface Props {
   file: TreeItem;
+  /** 列表展示类型 */
+  listType: string;
+  /** 列表展示类型切换 */
+  onListTypeChange: (type: string) => void;
   /** 保存 */
   onSave: () => void;
   /** 删除 */
@@ -18,9 +22,16 @@ interface Props {
   saveVisible: boolean;
 }
 
+const options = [
+  { label: '为列表', value: 'list' },
+  { label: '为图标', value: 'icon' },
+];
+
 function FileAction(props: Props) {
   const {
     file,
+    listType,
+    onListTypeChange,
     onSave,
     onDelete,
     saveVisible,
@@ -32,6 +43,14 @@ function FileAction(props: Props) {
   return (
     <div>
       <Space>
+        {file.type === V1ProjectAssetFileTypeEnum.DIRECTORY && (
+          <Radio.Group
+            options={options}
+            optionType="button"
+            value={listType}
+            onChange={(e) => onListTypeChange(e.target.value)}
+          />
+        )}
         {file.type === V1ProjectAssetFileTypeEnum.FILE && (
           <Button onClick={() => onCopyLink(file)}>复制文件链接</Button>
         )}

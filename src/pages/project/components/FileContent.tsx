@@ -8,10 +8,15 @@ import FileAction from './FileAction';
 import mime from 'mime-types';
 import FileItem from './FileItem';
 import { TreeItem } from '../type';
-import { LinkOutlined } from '@ant-design/icons';
+import { LinkOutlined, FileOutlined, FolderOutlined } from '@ant-design/icons';
+import { AySearchTable, AySearchTableField } from 'amiya';
 
 interface Props {
   file: TreeItem;
+  /** 列表展示类型 */
+  listType: string;
+  /** 列表展示类型切换 */
+  onListTypeChange: (type: string) => void;
   /** 选中文件 */
   onSelect: (file: TreeItem) => void;
   /** 删除文件 */
@@ -36,11 +41,12 @@ const editableExtension = [
   'md',
   'xml',
 ];
-
 /** 文件详情 */
 function FileContent(props: Props) {
   const {
     file,
+    listType,
+    onListTypeChange,
     onSelect,
     onDeleteAssets,
     onViewVersion,
@@ -53,6 +59,61 @@ function FileContent(props: Props) {
   const [content, setContent] = useState('');
   const [originalContent, setOriginalContent] = useState('');
 
+  const listFileds: AySearchTableField[] = [
+    {
+      title: '名称',
+      key: 'name',
+      render: (value: string, record: TreeItem) => {
+        return (
+          <a
+            onDoubleClick={() => onSelect(record)}
+            style={{ userSelect: 'none' }}
+          >
+            {record.type === V1ProjectAssetFileTypeEnum.DIRECTORY ? (
+              <FolderOutlined />
+            ) : (
+              <FileOutlined />
+            )}{' '}
+            {value}
+          </a>
+        );
+      },
+    },
+    {
+      title: '日期',
+      key: 'update_time',
+      renderType: 'datetime',
+    },
+    {
+      title: '文件大小',
+      key: 'size',
+      render: (size: number) => {
+        size = Number(size);
+        if (size === 0) {
+          return '-';
+        }
+        let unit = 'B';
+        if (size > 1024) {
+          size = Number((size / 1024).toFixed(2));
+          unit = 'KB';
+        }
+        if (size > 1024) {
+          size = Number((size / 1024).toFixed(2));
+          unit = 'MB';
+        }
+
+        return size + unit;
+      },
+    },
+    {
+      title: '文件类型',
+      key: 'public_url',
+      render: (url: string) => {
+        return mime.lookup(url);
+      },
+    },
+  ];
+
   const contentType = useMemo(() => {
     return mime.lookup(url) || 'text/plain';
   }, [extension]);
@@ -60,6 +121,24 @@ function FileContent(props: Props) {
   const renderContent = () => {
     // 文件夹
     if (file.type === V1ProjectAssetFileTypeEnum.DIRECTORY) {
+      if (listType === 'list') {
+        return (
+          <div style={{ padding: 16 }}>
+            <AySearchTable
+              fields={listFileds}
+              compact
+              pagination={false}
+              extraVisible={false}
+              data={file.children?.map((item) => {
+                return {
+                  ...item,
+                  children: null,
+                };
+              })}
+            />
+          </div>
+        );
+      }
       // @ts-ignore 展示子文件
       return (
         <div>
@@ -173,6 +252,8 @@ function FileContent(props: Props) {
           )}
         </span>
         <FileAction
+          listType={listType}
+          onListTypeChange={onListTypeChange}
           file={file}
           onCopyLink={onCopyLink}
           onViewVersion={onViewVersion}

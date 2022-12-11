@@ -40,7 +40,7 @@ const fields: AyFormField[] = [
  * 转树的节点
  * @param file 静态资源
  */
-const toTreeNode = (file: V1ProjectAssetFile): TreeItem => {
+function toTreeNode(file: V1ProjectAssetFile): TreeItem {
   return {
     ...file,
     title: file.name,
@@ -49,7 +49,7 @@ const toTreeNode = (file: V1ProjectAssetFile): TreeItem => {
     children: file?.children || [],
     isLeaf: file.type !== V1ProjectAssetFileTypeEnum.DIRECTORY,
   };
-};
+}
 
 /**
  * 压缩文件
@@ -78,12 +78,12 @@ function CompressorFile(file: File) {
  * @param key 需要修改节点的 key
  * @param children 节点的子列表
  */
-const updateTreeData = (
+function updateTreeData(
   list: TreeItem[],
   key?: string | number,
   children?: TreeItem[],
-): TreeItem[] =>
-  list.map((node) => {
+): TreeItem[] {
+  return list.map((node) => {
     if (node.key === key) {
       return {
         ...node,
@@ -98,13 +98,14 @@ const updateTreeData = (
     }
     return node;
   });
+}
 
 /**
  * 广度优先遍历树
  * @param list 列表
  * @param key 寻找的 key
  */
-const findNode = (list: TreeItem[], key: string) => {
+function findNode(list: TreeItem[], key: string) {
   let newList = [...list];
   for (let i = 0; i < newList.length; i++) {
     let node = newList[i];
@@ -115,7 +116,24 @@ const findNode = (list: TreeItem[], key: string) => {
       newList.push(...node.children);
     }
   }
-};
+}
+
+/**
+ * 排序文件
+ * @param a 第一个文件
+ * @param b 第二个文件
+ */
+function sortAssets(list: TreeItem[]) {
+  let newList: TreeItem[] = [];
+  list.forEach((item) => {
+    if (item.type === V1ProjectAssetFileTypeEnum.DIRECTORY) {
+      newList.unshift(item);
+    } else {
+      newList.push(item);
+    }
+  });
+  return newList;
+}
 
 function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
   const { match } = props;
@@ -143,6 +161,8 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
   const [uploading, setUploading] = useState(false);
   // 文件版本是否可见
   const [fileDifferVisible, setFileDifferVisible] = useState(false);
+  // 列表展示类型
+  const [listType, setListType] = useState('icon');
   // 当前选中的节点
   const activeNode: TreeItem = useMemo(() => {
     if (treeData.length && activeKey) {
@@ -225,7 +245,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
           }
         });
         // 设置父层级的子数据
-        parent.children = brothers.map((item) => toTreeNode(item));
+        parent.children = sortAssets(brothers.map((item) => toTreeNode(item)));
 
         tree = [parent];
         await loop(parent);
@@ -239,7 +259,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
             list[index] = file;
           }
         });
-        tree = list.map((item) => toTreeNode(item));
+        tree = sortAssets(list.map((item) => toTreeNode(item)));
       }
     }
     // 设置树数据
@@ -255,19 +275,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
   /** 加载静态数据 */
   const loadAssetsData = async ({ key, children }: TreeItem) => {
     const { list = [] } = await apiQueryAssetsFile(id, { parent_id: key });
-    let data = list
-      .map((item) => toTreeNode(item))
-      .sort((a, b) => {
-        if (a.type === b.type) {
-          return a > b ? -1 : 1;
-        }
-
-        if (a.type === V1ProjectAssetFileTypeEnum.DIRECTORY) {
-          return -1;
-        }
-
-        return 1;
-      });
+    let data = sortAssets(list.map((item) => toTreeNode(item)));
 
     if (!treeData.length || key === '0') {
       setTreeData(data.map((item) => toTreeNode(item)));
@@ -279,7 +287,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
       updateTreeData(
         origin,
         key,
-        list.map((item) => toTreeNode(item)),
+        sortAssets(list.map((item) => toTreeNode(item))),
       ),
     );
 
@@ -579,6 +587,8 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
               file={activeNode}
               onDeleteAssets={onDeleteAssets}
               onViewVersion={() => setFileDifferVisible(true)}
+              listType={listType}
+              onListTypeChange={setListType}
               onUpdateName={() => {
                 setEditNameVisible(true);
               }}

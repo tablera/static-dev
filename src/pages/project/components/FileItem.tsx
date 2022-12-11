@@ -53,9 +53,6 @@ function FileItem(props: Props) {
       <div className="project-file-item" key={file.id}>
         <div className="project-file-cover">{renderCover()}</div>
         <div className="project-file-label">{file.name}</div>
-        <div className="project-file-time">
-          {dayjs(file.update_time).format('MM-DD HH:mm')}
-        </div>
       </div>
     </div>
   );
