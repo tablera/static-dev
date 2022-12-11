@@ -43,7 +43,7 @@ function FileDiffer(props: Props) {
       versionDataMap[version],
     ].filter((v) => v !== undefined);
   }, [version, versionDataMap, versionList]);
-  // 版本回滚
+  // 版本回滚加载中
   const [rollbackLoading, setRollbackLoading] = useState(false);
   // 版本文件
   const versionFile = useMemo(() => {
@@ -62,9 +62,10 @@ function FileDiffer(props: Props) {
         fileId: versionFile.file_id,
         object_key: versionFile.object_key,
       });
-      onClose();
       message.success('回滚成功');
       onSuccess();
+      onClose();
+      setCurrVsibile(false);
     } catch (e) {}
 
     setRollbackLoading(false);
