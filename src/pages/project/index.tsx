@@ -1,13 +1,14 @@
 import { apiGetProjectById } from '@/api/project';
 import {
   V1Project,
+  V1ProjectAssetFile,
   V1ProjectAssetFileTypeEnum,
 } from '@/swagger/dev/data-contracts';
 import { useMount } from 'ahooks';
 import { useMemo, useRef, useState } from 'react';
-import { IRouteComponentProps } from 'umi';
+import { IRouteComponentProps, history } from 'umi';
 import './index.less';
-import { AnyKeyProps, AyDialogForm, AyFormField, FormValues } from 'amiya';
+import { AyDialogForm, AyFormField, FormValues } from 'amiya';
 import {
   apiCreateAssetsFile,
   apiDeleteAssetsFile,
@@ -33,6 +34,21 @@ const fields: AyFormField[] = [
     span: 24,
   },
 ];
+
+/**
+ * 转树的节点
+ * @param file 静态资源
+ */
+const toTreeNode = (file: V1ProjectAssetFile): TreeItem => {
+  return {
+    ...file,
+    title: file.name,
+    key: file.id + '',
+    // @ts-ignore
+    children: file?.children || [],
+    isLeaf: file.type !== V1ProjectAssetFileTypeEnum.DIRECTORY,
+  };
+};
 
 /**
  * 压缩文件
@@ -100,10 +116,9 @@ const findNode = (list: TreeItem[], key: string) => {
   }
 };
 
-function Project(props: IRouteComponentProps) {
+function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
   const { match } = props;
-  // @ts-ignore
-  const { id } = match.params;
+  const { id, fileId } = match.params;
   const inputRef = useRef<HTMLInputElement>();
   // 当前项目
   const [project, setProject] = useState<V1Project>({});
@@ -130,7 +145,7 @@ function Project(props: IRouteComponentProps) {
     if (treeData.length && activeKey) {
       return findNode(treeData, activeKey) || { parent_id: '0' };
     }
-    return { parent_id: '0', key: '' };
+    return { parent_id: '0', key: '', id: '', label: '' };
   }, [treeData, activeKey]);
 
   /** 加载数据 */
@@ -139,19 +154,77 @@ function Project(props: IRouteComponentProps) {
     setProject(project || {});
   };
 
+  const init = async () => {
+    if (!fileId) {
+      loadAssetsData({ key: 0 });
+      return;
+    }
+    // 加载自己当前文件
+    const { list = [] } = await apiQueryAssetsFile(id, { id_in: [fileId] });
+    // 当前文件
+    const self = toTreeNode(list[0]);
+
+    let expandedKeys: string[] = [self.id || ''];
+
+    let tree = [self];
+    await loop(self);
+
+    /**
+     * 递归一直加载到 parent_id 0 位置的数据
+     * @param file 当前节点
+     */
+    async function loop(file: TreeItem) {
+      // 非顶层数据加载
+      if (file.parent_id !== '0') {
+        const { list = [] } = await apiQueryAssetsFile(id, {
+          id_in: file.parent_id,
+        });
+        // 父层级
+        const parent = toTreeNode(list[0]);
+        expandedKeys.push(parent.id + '');
+
+        // 加载兄弟数据
+        let { list: brothers = [] } = await apiQueryAssetsFile(id, {
+          parent_id: file.parent_id,
+        });
+
+        // 在兄弟列表替换自己
+        brothers.find((item, index) => {
+          if (item.id === file.id) {
+            brothers[index] = file;
+          }
+        });
+        // 设置父层级的子数据
+        parent.children = brothers.map((item) => toTreeNode(item));
+
+        tree = [parent];
+        await loop(parent);
+      } else {
+        // 最顶层数据加载
+        let { list = [] } = await apiQueryAssetsFile(id, {
+          parent_id: '0',
+        });
+        list.find((item, index) => {
+          if (item.id === file.id) {
+            list[index] = file;
+          }
+        });
+        tree = list.map((item) => toTreeNode(item));
+      }
+    }
+    // 设置树数据
+    setTreeData(tree);
+    // 设置展开的层级
+    setExpandedKeys(expandedKeys);
+    // 设置选中的节点
+    setActiveKey(self.key + '');
+  };
+
   /** 加载静态数据 */
   const loadAssetsData = async ({ key, children }: TreeItem) => {
     const { list = [] } = await apiQueryAssetsFile(id, { parent_id: key });
     let data = list
-      .map((item) => {
-        return {
-          ...item,
-          title: item.name,
-          key: item.id,
-          children: [],
-          isLeaf: item.type !== V1ProjectAssetFileTypeEnum.DIRECTORY,
-        };
-      })
+      .map((item) => toTreeNode(item))
       .sort((a, b) => {
         if (a.type === b.type) {
           return a > b ? -1 : 1;
@@ -165,7 +238,7 @@ function Project(props: IRouteComponentProps) {
       });
 
     if (!treeData.length || key === '0') {
-      setTreeData(data);
+      setTreeData(data.map((item) => toTreeNode(item)));
       return;
     }
 
@@ -173,15 +246,7 @@ function Project(props: IRouteComponentProps) {
       updateTreeData(
         origin,
         key,
-        list.map((item) => {
-          return {
-            ...item,
-            title: item.name,
-            key: item.id,
-            children: [],
-            isLeaf: item.type !== V1ProjectAssetFileTypeEnum.DIRECTORY,
-          };
-        }),
+        list.map((item) => toTreeNode(item)),
       ),
     );
   };
@@ -280,9 +345,18 @@ function Project(props: IRouteComponentProps) {
     });
   };
 
+  const selectNode = (key: string) => {
+    setActiveKey(key);
+    if (key) {
+      history.push(`/project/${id}/file/${key}`);
+    } else {
+      history.push(`/project/${id}`);
+    }
+  };
+
   useMount(() => {
     loadData();
-    loadAssetsData({ key: '0' });
+    init();
   });
 
   return (
@@ -350,9 +424,7 @@ function Project(props: IRouteComponentProps) {
               selectedKeys={[activeKey]}
               expandedKeys={expandedKeys}
               onExpand={(expandedKeys) => setExpandedKeys(expandedKeys)}
-              onSelect={(selectedKeys, item) =>
-                setActiveKey(item.node.key as string)
-              }
+              onSelect={(selectedKeys, item) => selectNode(item.node.key + '')}
               titleRender={(node: TreeItem) => {
                 return (
                   <Popover
@@ -360,6 +432,14 @@ function Project(props: IRouteComponentProps) {
                     onOpenChange={setPoperActionVisible}
                     content={
                       <div className="project-poper-action-wrap">
+                        <div
+                          className="project-poper-action"
+                          onClick={() => {
+                            setPoperActionVisible(false);
+                          }}
+                        >
+                          复制文件链接
+                        </div>
                         <div
                           className="project-poper-action"
                           onClick={() => {
@@ -403,7 +483,7 @@ function Project(props: IRouteComponentProps) {
             />
             <div
               className="project-tree-side-extra"
-              onClick={() => setActiveKey('')}
+              onClick={() => selectNode('')}
             ></div>
           </div>
           <div className="project-tree-content">
@@ -416,6 +496,7 @@ function Project(props: IRouteComponentProps) {
               }}
               onCopyLink={() => handleCopy()}
               onSelect={(file) => {
+                selectNode(file.key + '');
                 setActiveKey(file.key + '');
                 setExpandedKeys([
                   ...expandedKeys,

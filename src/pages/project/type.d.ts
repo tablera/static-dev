@@ -5,6 +5,8 @@ export interface TreeItem extends V1ProjectAssetFile {
   title?: string;
   /** 唯一 key */
   key: string | number;
+  /** 是否是子节点 */
+  isLeaf?: boolean;
   /** 子元素 */
   children?: TreeItem[];
 }
