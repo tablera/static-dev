@@ -5,7 +5,7 @@ import {
   V1ProjectAssetFileTypeEnum,
 } from '@/swagger/dev/data-contracts';
 import { useMount } from 'ahooks';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { IRouteComponentProps, history } from 'umi';
 import './index.less';
 import { AyDialogForm, AyFormField, FormValues } from 'amiya';
@@ -355,9 +355,14 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
   };
 
   useMount(() => {
+    // 加载项目数据
     loadData();
     init();
   });
+
+  useEffect(() => {
+    setActiveKey(fileId + '');
+  }, [props.location]);
 
   return (
     <div className="project-tree" onDragEnter={(e) => setUploadVisible(true)}>
@@ -392,7 +397,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
         </div>
       )}
       <h2 className="project-tree-title">
-        <div className="project-tree-name" onClick={() => setActiveKey('')}>
+        <div className="project-tree-name" onClick={() => selectNode('')}>
           【{project.slug}】{project.name}
         </div>
         <ProjectAction
