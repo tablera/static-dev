@@ -2,12 +2,13 @@ import { apiUploadImg } from '@/api';
 import { apiReplaceAssetsFile } from '@/api/assets-file';
 import Editor from '@/components/Editor';
 import { V1ProjectAssetFileTypeEnum } from '@/swagger/dev/data-contracts';
-import { message, Skeleton, Space } from 'antd';
+import { Button, message, Skeleton, Space } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import FileAction from './FileAction';
 import mime from 'mime-types';
 import FileItem from './FileItem';
 import { TreeItem } from '../type';
+import { LinkOutlined } from '@ant-design/icons';
 
 interface Props {
   file: TreeItem;
@@ -62,7 +63,6 @@ function FileContent(props: Props) {
       // @ts-ignore 展示子文件
       return (
         <div>
-          <div className="editor-header">{file.name}</div>
           <div className="tree-item-file-list">
             <Space size="large" wrap>
               {file.children?.map((childFile: TreeItem) => (
@@ -164,7 +164,12 @@ function FileContent(props: Props) {
   return (
     <div className="tree-item-content">
       <header className="project-tree-content-header">
-        <span></span>
+        <span>
+          {file.name}
+          <Button type="link">
+            <LinkOutlined onClick={() => onCopyLink(file)} />
+          </Button>
+        </span>
         <FileAction
           file={file}
           onCopyLink={onCopyLink}

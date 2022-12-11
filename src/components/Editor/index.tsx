@@ -59,7 +59,6 @@ function Editor(props: Props) {
 
   return (
     <div className="editor">
-      <div className="editor-header">{props.filename}</div>
       <AceEditor
         ref={editor}
         mode={mode}
