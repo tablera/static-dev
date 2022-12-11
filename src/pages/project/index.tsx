@@ -135,12 +135,12 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
   const [treeData, setTreeData] = useState<TreeItem[]>([]);
   // 展开的节点 id
   const [expandedKeys, setExpandedKeys] = useState<(string | number)[]>([]);
+  // 已经加载的节点
+  const [loadedKeys, setLoadedKeys] = useState<string[]>([]);
   // 上传是否可见
   const [uploadVisible, setUploadVisible] = useState(false);
   // 是否正在上传中
   const [uploading, setUploading] = useState(false);
-  // 右键弹窗是否可见
-  const [poperActionVisible, setPoperActionVisible] = useState(false);
   // 文件版本是否可见
   const [fileDifferVisible, setFileDifferVisible] = useState(false);
   // 当前选中的节点
@@ -180,6 +180,9 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
   };
 
   const init = async () => {
+    setTreeData([]);
+    setExpandedKeys([]);
+    setLoadedKeys([]);
     if (fileId === '0') {
       loadAssetsData({ key: '0' });
       return;
@@ -190,6 +193,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
     const self = toTreeNode(list[0]);
 
     let expandedKeys: string[] = [self.id || ''];
+    let loadedKeys: string[] = [];
 
     let tree = [self];
     await loop(self);
@@ -206,7 +210,8 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
         });
         // 父层级
         const parent = toTreeNode(list[0]);
-        expandedKeys.push(parent.id + '');
+        expandedKeys.push(parent.id || '');
+        loadedKeys.push(parent.id || '');
 
         // 加载兄弟数据
         let { list: brothers = [] } = await apiQueryAssetsFile(id, {
@@ -243,6 +248,8 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
     setExpandedKeys(expandedKeys);
     // 设置选中的节点
     setActiveKey(self.key + '');
+    // 已经加载过的
+    setLoadedKeys(loadedKeys);
   };
 
   /** 加载静态数据 */
@@ -264,6 +271,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
 
     if (!treeData.length || key === '0') {
       setTreeData(data.map((item) => toTreeNode(item)));
+      setLoadedKeys(['0']);
       return;
     }
 
@@ -274,6 +282,8 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
         list.map((item) => toTreeNode(item)),
       ),
     );
+
+    setLoadedKeys([...loadedKeys, key.toString()]);
   };
 
   /**
@@ -529,6 +539,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
                 blockNode
                 selectedKeys={[activeKey]}
                 expandedKeys={expandedKeys}
+                loadedKeys={loadedKeys}
                 onExpand={(expandedKeys) => setExpandedKeys(expandedKeys)}
                 onSelect={(selectedKeys, item) =>
                   selectNode(item.node.key.toString())
@@ -641,7 +652,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
           name: activeNode?.name,
         }}
         onSuccess={() => {
-          loadAssetsData({ key: activeNode?.parent_id + '' });
+          init();
         }}
         onClose={() => setEditNameVisible(false)}
       />

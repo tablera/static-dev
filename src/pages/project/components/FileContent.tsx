@@ -166,9 +166,11 @@ function FileContent(props: Props) {
       <header className="project-tree-content-header">
         <span>
           {file.name}
-          <Button type="link">
-            <LinkOutlined onClick={() => onCopyLink(file)} />
-          </Button>
+          {file.type === V1ProjectAssetFileTypeEnum.FILE && (
+            <Button type="link">
+              <LinkOutlined onClick={() => onCopyLink(file)} />
+            </Button>
+          )}
         </span>
         <FileAction
           file={file}
