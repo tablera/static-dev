@@ -35,7 +35,10 @@ function FileAction(props: Props) {
         {file.type === V1ProjectAssetFileTypeEnum.FILE && (
           <Button onClick={() => onCopyLink(file)}>复制文件链接</Button>
         )}
-        <Button onClick={() => onViewVersion(file)}>查看历史版本</Button>
+        {file.type === V1ProjectAssetFileTypeEnum.FILE && (
+          <Button onClick={() => onViewVersion(file)}>查看历史版本</Button>
+        )}
+
         <Button onClick={() => onUpdateName(file)}>修改名称</Button>
         <Button danger onClick={() => onDelete(file)}>
           删除

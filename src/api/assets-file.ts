@@ -26,8 +26,8 @@ export const apiCreateAssetsFile = (
   );
 };
 
-/** 重命名目录名称 */
-export const apiUpdateMenuName = (
+/** 重命名资源名称 */
+export const apiUpdateAssetsName = (
   params: FormValues,
 ): Promise<V1RenameProjectAssetFileResponse> =>
   post(

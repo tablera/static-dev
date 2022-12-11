@@ -13,7 +13,7 @@ import {
   apiCreateAssetsFile,
   apiDeleteAssetsFile,
   apiQueryAssetsFile,
-  apiUpdateMenuName,
+  apiUpdateAssetsName,
 } from '@/api/assets-file';
 import { apiUploadImg } from '@/api';
 import Compressor from 'compressorjs';
@@ -22,10 +22,11 @@ import FileContent from './components/FileContent';
 import ProjectAction from './components/ProjectAction';
 import SplitPane from 'react-split-pane';
 import { TreeItem } from './type';
-import { message, Modal, Popover } from 'antd';
+import { Dropdown, message, Modal, Popover } from 'antd';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 import FileDiffer from './components/FileDiffer';
 import copy from 'copy-to-clipboard';
+import mime from 'mime-types';
 
 const fields: AyFormField[] = [
   {
@@ -124,8 +125,10 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
   const [project, setProject] = useState<V1Project>({});
   // 选中的项目
   const [activeKey, setActiveKey] = useState('');
-  // 新增目录是否可见
-  const [visible, setVisible] = useState(false);
+  // 新增是否可见
+  const [addVisible, setAddVisible] = useState(false);
+  // 新增文件是否可见
+  const [addFileVisible, setAddFileVisible] = useState(false);
   // 修改目录名称是否可见
   const [editNameVisible, setEditNameVisible] = useState(false);
   // 设置树
@@ -148,6 +151,28 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
     return { parent_id: '0', key: '', id: '', label: '' };
   }, [treeData, activeKey]);
 
+  /** 创建新文件 */
+  const apiCreateNewFile = async (values: FormValues): Promise<any> => {
+    const newFile = new File([], values.name, {
+      type: mime.lookup(values.name) || 'text/plain',
+    });
+
+    const { name, object_key } = await handleSaveFile(newFile);
+    let parent_id =
+      (activeNode.type === V1ProjectAssetFileTypeEnum.DIRECTORY
+        ? activeNode.id
+        : activeNode.parent_id) || '0';
+    const { id: activeKey = '' } = await apiCreateAssetsFile({
+      ...values,
+      type: 'FILE',
+      object_key,
+      name,
+      projectId: activeNode.project_id || id,
+      parent_id,
+    });
+    setActiveKey(activeKey);
+  };
+
   /** 加载数据 */
   const loadData = async () => {
     const { item: project } = await apiGetProjectById(id);
@@ -155,8 +180,8 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
   };
 
   const init = async () => {
-    if (!fileId) {
-      loadAssetsData({ key: 0 });
+    if (fileId === '0') {
+      loadAssetsData({ key: '0' });
       return;
     }
     // 加载自己当前文件
@@ -259,12 +284,20 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
     message.success('复制成功');
   };
 
-  const beforeSubmit = (values: FormValues) => {
+  const addFileBeforeSubmit = (values: FormValues) => {
+    let name = values.name;
+    if (name.split('.').length <= 1) {
+      message.info('请输入资源后缀名');
+      return false;
+    }
+    return values;
+  };
+
+  const addMenuBeforeSubmit = (values: FormValues) => {
     return {
       ...values,
       type: 'DIRECTORY',
       projectId: id,
-      parent_id: activeKey || '0',
     };
   };
 
@@ -331,7 +364,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
   const onDeleteAssets = (file: TreeItem) => {
     Modal.confirm({
       title: '删除提示',
-      content: '确定要删除这个文件吗？',
+      content: '确定要删除这个文件/文件夹吗？',
       icon: <ExclamationCircleOutlined />,
       onOk: async () => {
         await apiDeleteAssetsFile({
@@ -339,7 +372,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
           projectId: file.project_id,
         });
         loadAssetsData({ key: file.parent_id + '' });
-        setActiveKey('');
+        selectNode(file.parent_id || '0');
         message.success('删除成功');
       },
     });
@@ -350,7 +383,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
     if (key) {
       history.push(`/project/${id}/file/${key}`);
     } else {
-      history.push(`/project/${id}`);
+      history.push(`/project/${id}/file/0`);
     }
   };
 
@@ -361,7 +394,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
   });
 
   useEffect(() => {
-    setActiveKey(fileId + '');
+    setActiveKey(fileId || '0');
   }, [props.location]);
 
   return (
@@ -401,18 +434,11 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
           【{project.slug}】{project.name}
         </div>
         <ProjectAction
-          file={activeNode}
-          projectId={id}
-          onUpload={(file) => handleSaveFile(file)}
           openUpload={() => {
             inputRef.current?.click();
           }}
-          refresh={(file) => {
-            loadAssetsData(file);
-          }}
-          onNewFile={(id) => {
-            setActiveKey(id);
-          }}
+          onAddFile={() => setAddFileVisible(true)}
+          onAddMenu={() => setAddVisible(true)}
         />
       </h2>
       <div className="project-tree-main">
@@ -423,78 +449,119 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
           maxSize={800}
         >
           <div className="project-tree-side">
-            <DirectoryTree
-              treeData={treeData}
-              blockNode
-              selectedKeys={[activeKey]}
-              expandedKeys={expandedKeys}
-              onExpand={(expandedKeys) => setExpandedKeys(expandedKeys)}
-              onSelect={(selectedKeys, item) => selectNode(item.node.key + '')}
-              titleRender={(node: TreeItem) => {
-                return (
-                  <Popover
-                    open={poperActionVisible && node.id === activeKey}
-                    onOpenChange={setPoperActionVisible}
-                    content={
-                      <div className="project-poper-action-wrap">
-                        <div
-                          className="project-poper-action"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCopy();
-                            setPoperActionVisible(false);
-                          }}
-                        >
-                          复制文件链接
-                        </div>
-                        <div
-                          className="project-poper-action"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditNameVisible(true);
-                            setPoperActionVisible(false);
-                          }}
-                        >
-                          修改名称
-                        </div>
-                        <div
-                          className="project-poper-action"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setFileDifferVisible(true);
-                            setPoperActionVisible(false);
-                          }}
-                        >
-                          查看历史版本
-                        </div>
-                        <div
-                          className="project-poper-action"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteAssets(node);
-                            setPoperActionVisible(false);
-                          }}
-                        >
-                          删除
-                        </div>
-                      </div>
-                    }
-                    trigger={['contextMenu']}
-                    placement="bottom"
-                  >
-                    <div style={{ width: '100%' }}>{node.name}</div>
-                  </Popover>
-                );
+            <Dropdown
+              menu={{
+                items:
+                  activeNode.type === V1ProjectAssetFileTypeEnum.FILE
+                    ? [
+                        {
+                          label: '复制文件链接',
+                          key: 'copy',
+                          onClick: () => handleCopy(),
+                        },
+                        {
+                          label: '修改名称',
+                          key: 'updateName',
+                          onClick: () => setEditNameVisible(true),
+                        },
+                        {
+                          label: '查看历史版本',
+                          key: 'version',
+                          onClick: () => setFileDifferVisible(true),
+                        },
+                        {
+                          type: 'divider',
+                        },
+                        {
+                          label: '新建文件',
+                          key: 'addFile',
+                          onClick: () => setAddFileVisible(true),
+                        },
+                        {
+                          label: '新建文件夹',
+                          key: 'addMenu',
+                          onClick: () => setAddVisible(true),
+                        },
+                        {
+                          type: 'divider',
+                        },
+                        {
+                          label: '删除',
+                          key: 'delete',
+                          danger: true,
+                          onClick: () => onDeleteAssets(activeNode),
+                        },
+                      ]
+                    : [
+                        {
+                          label: '修改名称',
+                          key: 'updateName',
+                          onClick: () => setEditNameVisible(true),
+                        },
+                        {
+                          type: 'divider',
+                        },
+                        {
+                          label: '新建文件',
+                          key: 'addFile',
+                          onClick: () => setAddFileVisible(true),
+                        },
+                        {
+                          label: '新建文件夹',
+                          key: 'addMenu',
+                          onClick: () => setAddVisible(true),
+                        },
+                        {
+                          type: 'divider',
+                        },
+                        {
+                          label: '删除',
+                          key: 'delete',
+                          danger: true,
+                          onClick: () => onDeleteAssets(activeNode),
+                        },
+                      ],
               }}
-              onRightClick={({ node }) => {
-                setActiveKey(node.key + '');
+              trigger={['contextMenu']}
+            >
+              <DirectoryTree
+                treeData={treeData}
+                blockNode
+                selectedKeys={[activeKey]}
+                expandedKeys={expandedKeys}
+                onExpand={(expandedKeys) => setExpandedKeys(expandedKeys)}
+                onSelect={(selectedKeys, item) =>
+                  selectNode(item.node.key.toString())
+                }
+                onRightClick={({ node }) => {
+                  setActiveKey(node.key.toString());
+                }}
+                loadData={loadAssetsData}
+              />
+            </Dropdown>
+            <Dropdown
+              menu={{
+                items: [
+                  {
+                    label: '新建文件',
+                    key: 'addFile',
+                    onClick: () => setAddFileVisible(true),
+                  },
+                  {
+                    label: '新建文件夹',
+                    key: 'addMenu',
+                    onClick: () => setAddVisible(true),
+                  },
+                ],
               }}
-              loadData={loadAssetsData}
-            />
-            <div
-              className="project-tree-side-extra"
-              onClick={() => selectNode('')}
-            ></div>
+              trigger={['contextMenu']}
+            >
+              <div
+                className="project-tree-side-extra"
+                onClick={() => selectNode('')}
+                onContextMenu={() => selectNode('')}
+              ></div>
+            </Dropdown>
           </div>
           <div className="project-tree-content">
             <FileContent
@@ -523,26 +590,52 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
         </SplitPane>
       </div>
       <AyDialogForm
+        title="新建文件"
+        visible={addFileVisible}
+        fields={fields}
+        addApi={apiCreateNewFile}
+        beforeSubmit={addFileBeforeSubmit}
+        onSuccess={() => {
+          let activeKey: string =
+            (activeNode.type === V1ProjectAssetFileTypeEnum.FILE
+              ? activeNode.parent_id
+              : activeNode.key.toString()) || '0';
+          loadAssetsData({
+            key: activeKey,
+          });
+          setActiveKey(activeKey);
+        }}
+        onClose={() => setAddFileVisible(false)}
+      />
+      <AyDialogForm
         title="新建文件夹"
-        visible={visible}
+        visible={addVisible}
         fields={fields}
         addApi={(params) => {
           return apiCreateAssetsFile({
-            parent_id: activeKey || '0',
+            parent_id:
+              (activeNode.type === V1ProjectAssetFileTypeEnum.FILE
+                ? activeNode.parent_id
+                : activeNode.key) || '0',
             ...params,
           });
         }}
-        beforeSubmit={beforeSubmit}
+        beforeSubmit={addMenuBeforeSubmit}
         onSuccess={() => {
-          loadAssetsData(activeNode ? activeNode : { key: '0' });
+          loadAssetsData({
+            key:
+              (activeNode.type === V1ProjectAssetFileTypeEnum.FILE
+                ? activeNode.parent_id
+                : activeNode.key) || '0',
+          });
         }}
-        onClose={() => setVisible(false)}
+        onClose={() => setAddVisible(false)}
       />
       <AyDialogForm
         title="修改名称"
         visible={editNameVisible}
         fields={fields}
-        addApi={apiUpdateMenuName}
+        addApi={apiUpdateAssetsName}
         beforeSubmit={updateNameBeforeSubmit}
         initialValues={{
           name: activeNode?.name,

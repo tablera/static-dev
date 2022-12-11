@@ -51,7 +51,9 @@ function home() {
     render: (name: string, project: V1Project) => {
       return (
         <AyCtrl>
-          <AyAction onClick={() => history.push(`/project/${project.id}`)}>
+          <AyAction
+            onClick={() => history.push(`/project/${project.id}/file/0`)}
+          >
             资源管理
           </AyAction>
         </AyCtrl>
