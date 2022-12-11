@@ -439,7 +439,8 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
                       <div className="project-poper-action-wrap">
                         <div
                           className="project-poper-action"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             handleCopy();
                             setPoperActionVisible(false);
                           }}
@@ -448,7 +449,8 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
                         </div>
                         <div
                           className="project-poper-action"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setEditNameVisible(true);
                             setPoperActionVisible(false);
                           }}
@@ -457,7 +459,8 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
                         </div>
                         <div
                           className="project-poper-action"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setFileDifferVisible(true);
                             setPoperActionVisible(false);
                           }}
@@ -466,7 +469,8 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
                         </div>
                         <div
                           className="project-poper-action"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             onDeleteAssets(node);
                             setPoperActionVisible(false);
                           }}
