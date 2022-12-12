@@ -9,6 +9,7 @@ import moment from 'moment';
 import { useEffect, useMemo, useState } from 'react';
 import ReactDiffViewer from 'react-diff-viewer';
 import { TreeItem } from '../type';
+import { isImage } from '../util';
 
 interface Props {
   file: TreeItem;
@@ -102,12 +103,16 @@ function FileDiffer(props: Props) {
     if (versionDataMap[Number(version)]) {
       return;
     }
-
-    const res = await fetch(fv.public_url!, {
-      mode: 'cors',
-      method: 'GET',
-    });
-    const text = await res.text();
+    let text = '';
+    if (isImage(file)) {
+      text = fv.public_url || '';
+    } else {
+      const res = await fetch(fv.public_url!, {
+        mode: 'cors',
+        method: 'GET',
+      });
+      text = await res.text();
+    }
 
     setVersionDataMap((v) => ({ ...v, [version]: text }));
   };
@@ -162,14 +167,33 @@ function FileDiffer(props: Props) {
             })}
         />
       </header>
-      <ReactDiffViewer
-        leftTitle={`当前版本`}
-        oldValue={dataList[0]}
-        rightTitle={`历史版本 - ${version} - ${moment(
-          versionFile?.create_time,
-        ).format('YYYY-MM-DD HH:mm:ss')}`}
-        newValue={dataList[1]}
-      />
+      {isImage(file) ? (
+        <div className="image-change-body">
+          <div className="image-change-left">
+            <div className="image-change-header">现在当前版本的图片</div>
+            <div className="image-change-body">
+              <img src={dataList[0]} alt="" />
+            </div>
+          </div>
+          <div className="image-change-right">
+            <div className="image-change-header">{`历史版本 - ${version} - ${moment(
+              versionFile?.create_time,
+            ).format('YYYY-MM-DD HH:mm:ss')}`}</div>
+            <div className="image-change-body">
+              <img src={dataList[1]} alt="" />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <ReactDiffViewer
+          leftTitle={`当前版本`}
+          oldValue={dataList[0]}
+          rightTitle={`历史版本 - ${version} - ${moment(
+            versionFile?.create_time,
+          ).format('YYYY-MM-DD HH:mm:ss')}`}
+          newValue={dataList[1]}
+        />
+      )}
     </AyDialog>
   );
 }

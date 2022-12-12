@@ -10,6 +10,8 @@ import FileItem from './FileItem';
 import { TreeItem } from '../type';
 import { LinkOutlined, FileOutlined, FolderOutlined } from '@ant-design/icons';
 import { AySearchTable, AySearchTableField } from 'amiya';
+import { imgExtension } from '../constant';
+import { isImage } from '../util';
 
 interface Props {
   file: TreeItem;
@@ -30,17 +32,6 @@ interface Props {
   refresh: () => void;
 }
 
-const imgExtension = ['png', 'webp', 'svg', 'jpg', 'jpeg', 'gif', 'bmp'];
-const editableExtension = [
-  'json',
-  'html',
-  'javascript',
-  'js',
-  'css',
-  'markdown',
-  'md',
-  'xml',
-];
 /** 文件详情 */
 function FileContent(props: Props) {
   const {
@@ -155,16 +146,14 @@ function FileContent(props: Props) {
           </div>
         </div>
       );
-    } else if (imgExtension.includes(extension)) {
+    } else if (isImage(file)) {
       return (
         <div className="tree-item-file-content">
-          <img src={url} alt="" />
+          <img src={url + `?t=${Date.now()}`} alt="" />
         </div>
       );
-    } else if (editableExtension.includes(extension)) {
-      return '';
     }
-    return url;
+    return '';
   };
 
   const handleSave = async (value: string) => {
@@ -204,7 +193,7 @@ function FileContent(props: Props) {
 
   useEffect(() => {
     if (
-      !imgExtension.includes(extension) &&
+      !isImage(file) &&
       file.type !== V1ProjectAssetFileTypeEnum.DIRECTORY &&
       file.public_url
     ) {
@@ -267,8 +256,7 @@ function FileContent(props: Props) {
         />
       </header>
 
-      {!imgExtension.includes(extension) &&
-      file.type !== V1ProjectAssetFileTypeEnum.DIRECTORY ? (
+      {!isImage(file) && file.type !== V1ProjectAssetFileTypeEnum.DIRECTORY ? (
         <div className="tree-item-file-content" key={file.id}>
           <Editor
             filename={file.name}

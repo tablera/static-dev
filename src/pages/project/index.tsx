@@ -8,7 +8,7 @@ import { useMount } from 'ahooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { IRouteComponentProps, history } from 'umi';
 import './index.less';
-import { AyDialogForm, AyFormField, FormValues } from 'amiya';
+import { AyDialog, AyDialogForm, AyFormField, FormValues } from 'amiya';
 import {
   apiCreateAssetsFile,
   apiDeleteAssetsFile,
@@ -22,11 +22,14 @@ import FileContent from './components/FileContent';
 import ProjectAction from './components/ProjectAction';
 import SplitPane from 'react-split-pane';
 import { TreeItem } from './type';
-import { Dropdown, message, Modal, Popover } from 'antd';
-import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { Dropdown, message, Modal } from 'antd';
+import { ExclamationCircleOutlined, UploadOutlined } from '@ant-design/icons';
 import FileDiffer from './components/FileDiffer';
 import copy from 'copy-to-clipboard';
 import mime from 'mime-types';
+import ImageChange from './components/ImageChange';
+import { isImage } from './util';
+import ImageDiffer from './components/ImageDiffer';
 
 const fields: AyFormField[] = [
   {
@@ -163,6 +166,8 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
   const [fileDifferVisible, setFileDifferVisible] = useState(false);
   // 列表展示类型
   const [listType, setListType] = useState('icon');
+  // 图片替换展示
+  const [imageChangeVisible, setImageChangeVisible] = useState(false);
   // 当前选中的节点
   const activeNode: TreeItem = useMemo(() => {
     if (treeData.length && activeKey) {
@@ -199,6 +204,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
     setProject(project || {});
   };
 
+  /** 首次加载，加载到当前节点的数据 */
   const init = async () => {
     setTreeData([]);
     setExpandedKeys([]);
@@ -350,6 +356,7 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
     return {
       name,
       object_key,
+      public_url: res.public_url,
     };
   };
 
@@ -396,6 +403,10 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
     });
   };
 
+  /**
+   * 选中一个节点
+   * @param key 选中节点的 key
+   */
   const selectNode = (key: string) => {
     setActiveKey(key);
     if (key) {
@@ -477,6 +488,11 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
                           key: 'copy',
                           onClick: () => handleCopy(),
                         },
+                        isImage(activeNode) && {
+                          label: '图片替换',
+                          key: 'imageChange',
+                          onClick: () => setImageChangeVisible(true),
+                        },
                         {
                           label: '修改名称',
                           key: 'updateName',
@@ -485,7 +501,9 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
                         {
                           label: '查看历史版本',
                           key: 'version',
-                          onClick: () => setFileDifferVisible(true),
+                          onClick: () => {
+                            setFileDifferVisible(true);
+                          },
                         },
                         {
                           type: 'divider',
@@ -652,6 +670,15 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
           init();
         }}
         onClose={() => setEditNameVisible(false)}
+      />
+      <ImageChange
+        file={activeNode}
+        visible={imageChangeVisible}
+        onClose={() => setImageChangeVisible(false)}
+        onSaveFile={handleSaveFile}
+        onSuccess={() => {
+          loadAssetsData({ key: activeNode?.parent_id + '' });
+        }}
       />
       <FileDiffer
         file={activeNode}
