@@ -1,5 +1,6 @@
 import { V1ProjectAssetFileTypeEnum } from '@/swagger/dev/data-contracts';
 import { Button, Radio, Space } from 'antd';
+import { AppstoreOutlined, BarsOutlined } from '@ant-design/icons';
 import { TreeItem } from '../type';
 
 interface Props {
@@ -23,8 +24,8 @@ interface Props {
 }
 
 const options = [
-  { label: '为列表', value: 'list' },
-  { label: '为图标', value: 'icon' },
+  { label: <BarsOutlined />, value: 'list' },
+  { label: <AppstoreOutlined />, value: 'icon' },
 ];
 
 function FileAction(props: Props) {

@@ -491,19 +491,6 @@ function Project(props: IRouteComponentProps<{ [key: string]: string }>) {
                           type: 'divider',
                         },
                         {
-                          label: '新建文件',
-                          key: 'addFile',
-                          onClick: () => setAddFileVisible(true),
-                        },
-                        {
-                          label: '新建文件夹',
-                          key: 'addMenu',
-                          onClick: () => setAddVisible(true),
-                        },
-                        {
-                          type: 'divider',
-                        },
-                        {
                           label: '删除',
                           key: 'delete',
                           danger: true,
