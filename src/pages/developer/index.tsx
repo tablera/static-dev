@@ -43,6 +43,7 @@ const fields: AySearchTableField[] = [
     title: '手机号',
     key: 'phone_number',
     dialog: {
+      required: true,
       reSetting: (fields: AyFormField, mode: string) => {
         fields.readonly = mode === 'update';
         return fields;
@@ -85,6 +86,7 @@ function Developer() {
         name: values.name,
       };
     }
+    values.country_code = '86';
     return values;
   };
 
