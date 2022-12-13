@@ -9,7 +9,7 @@ const instance = axios.create({
 });
 
 // @ts-ignore
-let apiBase = 'https://api.dev.tablera.cn';
+let apiBase = window.config.API_BASE;
 
 console.log('请求路径：', apiBase);
 
